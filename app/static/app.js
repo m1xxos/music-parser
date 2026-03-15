@@ -2,6 +2,8 @@
 
 // ── Waveform state ───────────────────────────────────────────────────────────
 let audioBuffer = null;
+let audioContext = null;
+let audioElement = null;
 let startTime = 0;
 let endTime = 0;
 let duration = 0;
@@ -9,10 +11,14 @@ let waveformPeaks = [];
 let startHandlePos = 0;
 let endHandlePos = 0;
 let isDragging = null;
+let isPlaying = false;
+let playStartTime = 0;
+let playStartOffset = 0;
 
 // ── UI Elements ──────────────────────────────────────────────────────────────
 let canvas, ctx, waveformContainer;
 let startTimeDisplay, endTimeDisplay;
+let playBtn, playBtnText;
 let audioLoader;
 
 function initWaveformUI() {
@@ -21,6 +27,8 @@ function initWaveformUI() {
   waveformContainer = document.getElementById('waveformContainer');
   startTimeDisplay = document.getElementById('startTimeDisplay');
   endTimeDisplay = document.getElementById('endTimeDisplay');
+  playBtn = document.getElementById('playBtn');
+  playBtnText = document.getElementById('playBtnText');
   audioLoader = document.getElementById('audioLoader');
 
   // Set canvas resolution
@@ -69,7 +77,8 @@ async function fetchWaveformData(url) {
       throw new Error('Could not extract video ID from URL');
     }
 
-    const response = await fetch(`/api/waveform/${videoId}`);
+    // Fetch waveform with the full URL
+    const response = await fetch(`/api/waveform/${videoId}?url=${encodeURIComponent(url)}`);
     if (!response.ok) {
       throw new Error('Failed to fetch waveform data');
     }
@@ -79,7 +88,7 @@ async function fetchWaveformData(url) {
     duration = data.duration;
     waveformPeaks = data.peaks;
 
-    // Initialize handles
+    // Initialize handles - start at beginning, end at full duration
     startHandlePos = 0;
     endHandlePos = canvas.getBoundingClientRect().width;
     startTime = 0;
@@ -89,6 +98,7 @@ async function fetchWaveformData(url) {
     drawWaveform();
 
     waveformContainer.classList.add('has-audio');
+    playBtn.disabled = false;
     audioLoader.classList.remove('show');
   } catch (error) {
     console.error('Waveform fetch error:', error);
@@ -170,6 +180,21 @@ function drawWaveform() {
   // Draw handles
   drawHandle(startHandlePos, true);
   drawHandle(endHandlePos, false);
+
+  // Draw playhead if playing
+  if (isPlaying && audioElement) {
+    const currentTime = audioElement.currentTime;
+    if (currentTime >= startTime && currentTime <= endTime) {
+      const progress = (currentTime - startTime) / (endTime - startTime);
+      const playheadX = startHandlePos + progress * (endHandlePos - startHandlePos);
+      ctx.strokeStyle = '#1a1a2e';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(playheadX, 0);
+      ctx.lineTo(playheadX, height);
+      ctx.stroke();
+    }
+  }
 }
 
 function drawHandle(x, isStart) {
@@ -336,6 +361,85 @@ function parseTimeToSeconds(value) {
   // Pure seconds
   const seconds = parseFloat(value);
   return isNaN(seconds) ? 0 : seconds;
+}
+
+// ── Audio playback ───────────────────────────────────────────────────────────
+async function togglePlay() {
+  if (!audioBuffer) return;
+
+  if (isPlaying) {
+    stopPlayback();
+  } else {
+    await startPlayback();
+  }
+}
+
+async function startPlayback() {
+  // Create audio element if not exists
+  if (!audioElement) {
+    audioElement = new Audio();
+    audioElement.addEventListener('ended', () => stopPlayback());
+    audioElement.addEventListener('timeupdate', onAudioTimeUpdate);
+  }
+
+  // Load audio if not loaded
+  if (!audioElement.src || audioElement.src === '') {
+    const videoId = extractVideoId(document.getElementById('url').value.trim());
+    const previewUrl = `/api/audio-preview/${videoId}`;
+    audioElement.src = previewUrl;
+  }
+
+  try {
+    await audioElement.load();
+    
+    // Calculate the offset within the selected range
+    const rangeDuration = endTime - startTime;
+    const offset = startTime;
+    
+    audioElement.currentTime = offset;
+    playStartOffset = offset;
+    
+    await audioElement.play();
+    
+    isPlaying = true;
+    playStartTime = Date.now() / 1000;
+    playBtnText.textContent = 'Pause';
+    
+    animatePlayhead();
+  } catch (e) {
+    console.error('Playback error:', e);
+    stopPlayback();
+  }
+}
+
+function stopPlayback() {
+  if (audioElement) {
+    audioElement.pause();
+  }
+  isPlaying = false;
+  playBtnText.textContent = 'Play';
+}
+
+function onAudioTimeUpdate() {
+  if (!audioElement || !isPlaying) return;
+  
+  const currentTime = audioElement.currentTime;
+  
+  // Check if we've reached the end time
+  if (currentTime >= endTime) {
+    stopPlayback();
+    audioElement.currentTime = endTime;
+  }
+  
+  drawWaveform();
+}
+
+function animatePlayhead() {
+  if (!isPlaying) return;
+  drawWaveform();
+  if (isPlaying) {
+    requestAnimationFrame(animatePlayhead);
+  }
 }
 
 // ── Status display ───────────────────────────────────────────────────────────
