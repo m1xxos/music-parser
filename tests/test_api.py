@@ -14,6 +14,8 @@ from main import app, _jobs
 
 client = TestClient(app, raise_server_exceptions=False)
 
+pytestmark = pytest.mark.unit
+
 
 # ── Helper ────────────────────────────────────────────────────────────────────
 
