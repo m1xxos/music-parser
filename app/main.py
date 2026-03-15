@@ -1,12 +1,14 @@
 """FastAPI application for Music Parser."""
 import asyncio
+import hashlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Optional
 
+import httpx
 from fastapi import BackgroundTasks, FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, field_validator
 
@@ -19,6 +21,9 @@ _executor = ThreadPoolExecutor(max_workers=4)
 
 # In-memory job store  {job_id: {"status": ..., "message": ..., "file": ...}}
 _jobs: dict[str, dict] = {}
+
+# Cache for waveform data
+_waveform_cache: dict[str, dict] = {}
 
 
 # ── Request / response schemas ────────────────────────────────────────────────
@@ -57,6 +62,32 @@ async def get_job(job_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return job
+
+
+@app.get("/api/waveform/{video_id}")
+async def get_waveform(video_id: str):
+    """Get waveform data for a video (simulated for demo)."""
+    # Check cache first
+    if video_id in _waveform_cache:
+        return JSONResponse(content=_waveform_cache[video_id])
+
+    # Generate simulated waveform data (in production, this would use ffmpeg)
+    # Generate 100 peaks representing the audio amplitude over time
+    import random
+    random.seed(hash(video_id) % 2**32)
+    peaks = [random.uniform(0.1, 1.0) for _ in range(100)]
+
+    # Simulated duration (random between 2-10 minutes for demo)
+    duration = random.uniform(120, 600)
+
+    waveform_data = {
+        "peaks": peaks,
+        "duration": duration,
+        "video_id": video_id,
+    }
+
+    _waveform_cache[video_id] = waveform_data
+    return JSONResponse(content=waveform_data)
 
 
 # ── Background task ───────────────────────────────────────────────────────────

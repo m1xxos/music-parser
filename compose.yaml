@@ -12,8 +12,8 @@ services:
       - OUTPUT_DIR=${OUTPUT_DIR:-/music}
     volumes:
       - ${MUSIC_DIR:-music}:/music
-    expose:
-      - 8000
+    ports:
+      - "8000:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
       interval: 30s
