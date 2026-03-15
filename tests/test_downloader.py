@@ -9,6 +9,8 @@ import pytest
 
 import downloader as dl
 
+pytestmark = pytest.mark.unit
+
 
 # ── _safe_filename ────────────────────────────────────────────────────────────
 
