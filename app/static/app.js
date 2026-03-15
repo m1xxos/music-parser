@@ -1,4 +1,4 @@
-/* Music Parser – frontend logic with waveform scrubber */
+/* Music Parser – Frontend Logic with Waveform Scrubber */
 
 // ── Waveform state ───────────────────────────────────────────────────────────
 let audioBuffer = null;
@@ -18,7 +18,7 @@ let playStartOffset = 0;
 // ── UI Elements ──────────────────────────────────────────────────────────────
 let canvas, ctx, waveformContainer;
 let startTimeDisplay, endTimeDisplay;
-let playBtn, playBtnText;
+let playBtn, playBtnText, playIcon, pauseIcon;
 let audioLoader;
 
 function initWaveformUI() {
@@ -29,6 +29,8 @@ function initWaveformUI() {
   endTimeDisplay = document.getElementById('endTimeDisplay');
   playBtn = document.getElementById('playBtn');
   playBtnText = document.getElementById('playBtnText');
+  playIcon = document.getElementById('playIcon');
+  pauseIcon = document.getElementById('pauseIcon');
   audioLoader = document.getElementById('audioLoader');
 
   // Set canvas resolution
@@ -61,7 +63,11 @@ function toggleAdvanced() {
   const panel = document.getElementById('advancedPanel');
   panel.classList.toggle('open');
   if (panel.classList.contains('open')) {
-    setTimeout(initWaveformUI, 100);
+    setTimeout(() => {
+      initWaveformUI();
+      // Trigger a resize event to ensure canvas is properly sized
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
   }
 }
 
@@ -70,7 +76,8 @@ async function fetchWaveformData(url) {
   try {
     audioLoader.classList.add('show');
     waveformContainer.classList.remove('has-audio');
-    
+    playBtn.disabled = true;
+
     // Extract video ID from various URL formats
     const videoId = extractVideoId(url);
     if (!videoId) {
@@ -85,8 +92,8 @@ async function fetchWaveformData(url) {
 
     const data = await response.json();
     audioBuffer = data;
-    duration = data.duration;
-    waveformPeaks = data.peaks;
+    duration = data.duration || 0;
+    waveformPeaks = data.peaks || [];
 
     // Initialize handles - start at beginning, end at full duration
     startHandlePos = 0;
@@ -131,49 +138,65 @@ function drawWaveform() {
 
   ctx.clearRect(0, 0, width, height);
 
-  // Background
-  ctx.fillStyle = '#ffffff';
+  // Background gradient
+  const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+  bgGradient.addColorStop(0, '#1a1229');
+  bgGradient.addColorStop(1, '#251a3a');
+  ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, width, height);
 
   // Draw waveform peaks
   if (waveformPeaks.length > 0) {
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, '#6c63ff');
-    gradient.addColorStop(1, '#a78bfa');
+    gradient.addColorStop(0, '#a855f7');
+    gradient.addColorStop(0.5, '#c026d3');
+    gradient.addColorStop(1, '#7c3aed');
     ctx.fillStyle = gradient;
 
     const barWidth = width / waveformPeaks.length;
     const centerY = height / 2;
 
+    // Draw bars with rounded tops
     for (let i = 0; i < waveformPeaks.length; i++) {
       const peak = waveformPeaks[i];
-      const barHeight = peak * (height * 0.8);
+      const barHeight = peak * (height * 0.7);
       const x = i * barWidth;
       const y = centerY - barHeight / 2;
-      ctx.fillRect(x, y, barWidth - 1, barHeight);
+      
+      // Draw mirrored bars
+      roundRect(ctx, x, y, barWidth - 1, barHeight, 2);
+      ctx.fill();
     }
   } else {
     // Placeholder waveform
-    ctx.fillStyle = '#e0e0e5';
+    ctx.fillStyle = '#3d2a4f';
     const barWidth = 4;
     const centerY = height / 2;
     for (let x = 0; x < width; x += barWidth + 2) {
-      const barHeight = Math.random() * height * 0.5 + 10;
-      ctx.fillRect(x, centerY - barHeight / 2, barWidth, barHeight);
+      const barHeight = Math.random() * height * 0.4 + 15;
+      roundRect(ctx, x, centerY - barHeight / 2, barWidth, barHeight, 2);
+      ctx.fill();
     }
   }
 
   // Draw selection overlay
   if (endHandlePos > startHandlePos) {
     // Left overlay
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    const leftGradient = ctx.createLinearGradient(0, 0, startHandlePos, 0);
+    leftGradient.addColorStop(0, 'rgba(15, 10, 26, 0.8)');
+    leftGradient.addColorStop(1, 'rgba(15, 10, 26, 0.4)');
+    ctx.fillStyle = leftGradient;
     ctx.fillRect(0, 0, startHandlePos, height);
 
     // Right overlay
+    const rightGradient = ctx.createLinearGradient(endHandlePos, 0, width, 0);
+    rightGradient.addColorStop(0, 'rgba(15, 10, 26, 0.4)');
+    rightGradient.addColorStop(1, 'rgba(15, 10, 26, 0.8)');
+    ctx.fillStyle = rightGradient;
     ctx.fillRect(endHandlePos, 0, width - endHandlePos, height);
 
     // Selection highlight
-    ctx.fillStyle = 'rgba(108, 99, 255, 0.15)';
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.15)';
     ctx.fillRect(startHandlePos, 0, endHandlePos - startHandlePos, height);
   }
 
@@ -187,37 +210,72 @@ function drawWaveform() {
     if (currentTime >= startTime && currentTime <= endTime) {
       const progress = (currentTime - startTime) / (endTime - startTime);
       const playheadX = startHandlePos + progress * (endHandlePos - startHandlePos);
-      ctx.strokeStyle = '#1a1a2e';
+      
+      // Playhead line
+      ctx.strokeStyle = '#f5f3ff';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
       ctx.lineTo(playheadX, height);
       ctx.stroke();
+      
+      // Playhead dot
+      ctx.fillStyle = '#f5f3ff';
+      ctx.beginPath();
+      ctx.arc(playheadX, 8, 4, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 }
 
+function roundRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
 function drawHandle(x, isStart) {
   const height = canvas.getBoundingClientRect().height;
-  ctx.fillStyle = '#6c63ff';
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
-
+  
+  // Handle glow
+  const glowGradient = ctx.createRadialGradient(x, height / 2, 0, x, height / 2, 20);
+  glowGradient.addColorStop(0, 'rgba(168, 85, 247, 0.4)');
+  glowGradient.addColorStop(1, 'rgba(168, 85, 247, 0)');
+  ctx.fillStyle = glowGradient;
+  ctx.fillRect(x - 20, 0, 40, height);
+  
   // Handle bar
-  ctx.beginPath();
-  ctx.moveTo(x, 0);
-  ctx.lineTo(x, height);
-  ctx.stroke();
+  const barGradient = ctx.createLinearGradient(x - 2, 0, x + 2, 0);
+  barGradient.addColorStop(0, '#a855f7');
+  barGradient.addColorStop(1, '#c026d3');
+  ctx.fillStyle = barGradient;
+  ctx.fillRect(x - 2, 0, 4, height);
 
   // Handle circle
+  const circleGradient = ctx.createRadialGradient(x, height / 2, 0, x, height / 2, 10);
+  circleGradient.addColorStop(0, '#a855f7');
+  circleGradient.addColorStop(1, '#7c3aed');
+  ctx.fillStyle = circleGradient;
   ctx.beginPath();
-  ctx.arc(x, height / 2, 8, 0, Math.PI * 2);
+  ctx.arc(x, height / 2, 10, 0, Math.PI * 2);
   ctx.fill();
+  
+  // Circle border
+  ctx.strokeStyle = '#f5f3ff';
+  ctx.lineWidth = 2;
   ctx.stroke();
 
   // Handle icon
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '10px Arial';
+  ctx.fillStyle = '#f5f3ff';
+  ctx.font = 'bold 10px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(isStart ? '◀' : '▶', x, height / 2);
@@ -231,7 +289,7 @@ function getCanvasX(e) {
 }
 
 function getHandleAt(x) {
-  const threshold = 15;
+  const threshold = 20;
   if (Math.abs(x - startHandlePos) < threshold) return 'start';
   if (Math.abs(x - endHandlePos) < threshold) return 'end';
   return null;
@@ -391,20 +449,22 @@ async function startPlayback() {
 
   try {
     await audioElement.load();
-    
+
     // Calculate the offset within the selected range
     const rangeDuration = endTime - startTime;
     const offset = startTime;
-    
+
     audioElement.currentTime = offset;
     playStartOffset = offset;
-    
+
     await audioElement.play();
-    
+
     isPlaying = true;
-    playStartTime = Date.now() / 1000;
     playBtnText.textContent = 'Pause';
-    
+    playIcon.style.display = 'none';
+    pauseIcon.style.display = 'inline';
+    playBtn.classList.add('active');
+
     animatePlayhead();
   } catch (e) {
     console.error('Playback error:', e);
@@ -418,19 +478,22 @@ function stopPlayback() {
   }
   isPlaying = false;
   playBtnText.textContent = 'Play';
+  playIcon.style.display = 'inline';
+  pauseIcon.style.display = 'none';
+  playBtn.classList.remove('active');
 }
 
 function onAudioTimeUpdate() {
   if (!audioElement || !isPlaying) return;
-  
+
   const currentTime = audioElement.currentTime;
-  
+
   // Check if we've reached the end time
   if (currentTime >= endTime) {
     stopPlayback();
     audioElement.currentTime = endTime;
   }
-  
+
   drawWaveform();
 }
 
@@ -451,8 +514,8 @@ function setStatus(state, message) {
     ? '<div class="spinner"></div>'
     : '';
 
-  const icons = { done: '✅', error: '❌' };
-  const icon = icons[state] ? `<span>${icons[state]}</span>` : '';
+  const icons = { done: '✓', error: '✕' };
+  const icon = icons[state] ? `<span style="font-size:1.2em;font-weight:bold;">${icons[state]}</span>` : '';
 
   el.innerHTML = `${spinner}${icon}<span>${message}</span>`;
 }
@@ -479,13 +542,13 @@ async function pollJob(jobId) {
     }
 
     if (data.status === 'done') {
-      setStatus('done', data.message);
+      setStatus('done', `✓ ${data.message}`);
       document.getElementById('downloadBtn').disabled = false;
       return;
     }
 
     if (data.status === 'error') {
-      setStatus('error', data.message);
+      setStatus('error', `✕ ${data.message}`);
       document.getElementById('downloadBtn').disabled = false;
       return;
     }
@@ -552,4 +615,16 @@ document.getElementById('url').addEventListener('keydown', (e) => {
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
   // Waveform UI will be initialized when advanced panel opens
+});
+
+// Handle window resize for responsive canvas
+window.addEventListener('resize', () => {
+  if (canvas && ctx) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    drawWaveform();
+  }
 });
