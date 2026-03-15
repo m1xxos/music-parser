@@ -1,0 +1,26 @@
+services:
+  music-parser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: music-parser:latest
+    container_name: music-parser
+    restart: unless-stopped
+    env_file:
+      - stack.env
+    environment:
+      - OUTPUT_DIR=${OUTPUT_DIR:-/music}
+    volumes:
+      - ${MUSIC_DIR:-music}:/music
+    expose:
+      - 8000
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  music:
+    name: music
