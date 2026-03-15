@@ -43,6 +43,10 @@ class DownloadPayload(BaseModel):
     title: Optional[str] = None
     artist: Optional[str] = None
     album: Optional[str] = None
+    album_artist: Optional[str] = None
+    genre: Optional[str] = None
+    year: Optional[str] = None
+    track_number: Optional[int] = None
 
     @field_validator("url")
     @classmethod
@@ -213,6 +217,10 @@ async def _run_download(job_id: str, payload: DownloadPayload) -> None:
             title=payload.title,
             artist=payload.artist,
             album=payload.album,
+            album_artist=payload.album_artist,
+            genre=payload.genre,
+            year=payload.year,
+            track_number=payload.track_number,
         )
         filename = await loop.run_in_executor(_executor, download_and_process, req)
         _jobs[job_id] = {
