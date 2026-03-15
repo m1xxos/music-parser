@@ -6,16 +6,38 @@ services:
     image: music-parser:latest
     container_name: music-parser
     restart: unless-stopped
+    read_only: true
+    user: "1000:1000"
     env_file:
       - stack.env
     environment:
       - OUTPUT_DIR=${OUTPUT_DIR:-/music}
     volumes:
-      - ${MUSIC_DIR:-music}:/music
+      - music:/music:rw
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 64M
+      - type: tmpfs
+        target: /app/static
+        tmpfs:
+          size: 32M
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    expose:
+      - 8000
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
+    networks:
+      - music-network
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      test: ["CMD", "python", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
       interval: 30s
       timeout: 10s
       start_period: 15s
@@ -24,3 +46,10 @@ services:
 volumes:
   music:
     name: music
+
+networks:
+  music-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

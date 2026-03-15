@@ -16,6 +16,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Stage 2: Runtime - minimal image with only what's needed
 FROM python:3.12-slim AS runtime
 
+# Create non-root user for security
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
+
 # System deps: ffmpeg for audio processing
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ffmpeg \
@@ -31,7 +34,10 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY app/ .
 
 # Default output directory (override with OUTPUT_DIR env var)
-RUN mkdir -p /music
+RUN mkdir -p /music && chown -R appuser:appgroup /music /app
+
+# Switch to non-root user
+USER appuser
 
 EXPOSE 8000
 
