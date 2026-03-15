@@ -10,6 +10,24 @@ import pytest
 import downloader as dl
 
 
+# ── _extract_year_from_upload_date ───────────────────────────────────────────
+
+class TestExtractYear:
+    def test_valid_upload_date(self):
+        assert dl._extract_year_from_upload_date("20240115") == "2024"
+
+    def test_valid_upload_date_different_year(self):
+        assert dl._extract_year_from_upload_date("20201231") == "2020"
+
+    def test_none_returns_none(self):
+        assert dl._extract_year_from_upload_date(None) is None
+
+    def test_invalid_format_returns_none(self):
+        assert dl._extract_year_from_upload_date("2024-01-15") is None
+        assert dl._extract_year_from_upload_date("202401") is None
+        assert dl._extract_year_from_upload_date("invalid") is None
+
+
 # ── _safe_filename ────────────────────────────────────────────────────────────
 
 class TestSafeFilename:
@@ -88,11 +106,28 @@ class TestDownloadRequest:
         assert req.artist == "DJ X"
         assert req.album == "Events"
 
+    def test_stores_extended_fields(self):
+        req = dl.DownloadRequest(
+            url="https://example.com/video",
+            album_artist="Various Artists",
+            genre="Electronic",
+            year="2024",
+            track_number=5,
+        )
+        assert req.album_artist == "Various Artists"
+        assert req.genre == "Electronic"
+        assert req.year == "2024"
+        assert req.track_number == 5
+
     def test_optional_none_defaults(self):
         req = dl.DownloadRequest(url="https://example.com")
         assert req.start_time is None
         assert req.end_time is None
         assert req.title is None
+        assert req.album_artist is None
+        assert req.genre is None
+        assert req.year is None
+        assert req.track_number is None
 
     def test_invalid_time_propagates(self):
         with pytest.raises(ValueError):

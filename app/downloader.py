@@ -9,7 +9,7 @@ from typing import Optional
 
 import requests
 import yt_dlp
-from mutagen.id3 import APIC, ID3, TALB, TIT2, TPE1
+from mutagen.id3 import APIC, ID3, TALB, TCON, TDRC, TIT2, TPE1, TPE2, TRCK
 from mutagen.mp3 import MP3
 
 OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "/music")
@@ -38,6 +38,13 @@ def _parse_time(value: Optional[str]) -> Optional[str]:
     )
 
 
+def _extract_year_from_upload_date(upload_date: Optional[str]) -> Optional[str]:
+    """Extract year from upload_date string (YYYYMMDD format)."""
+    if upload_date and len(upload_date) == 8:
+        return upload_date[:4]
+    return None
+
+
 class DownloadRequest:
     """Holds all parameters for a single download job."""
 
@@ -49,6 +56,10 @@ class DownloadRequest:
         title: Optional[str] = None,
         artist: Optional[str] = None,
         album: Optional[str] = None,
+        album_artist: Optional[str] = None,
+        genre: Optional[str] = None,
+        year: Optional[str] = None,
+        track_number: Optional[int] = None,
     ):
         self.url = url
         self.start_time = _parse_time(start_time)
@@ -56,6 +67,10 @@ class DownloadRequest:
         self.title = title
         self.artist = artist
         self.album = album
+        self.album_artist = album_artist
+        self.genre = genre
+        self.year = year
+        self.track_number = track_number
 
 
 def download_and_process(req: DownloadRequest) -> str:
@@ -86,9 +101,14 @@ def download_and_process(req: DownloadRequest) -> str:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(req.url, download=True)
 
-        title = req.title or info.get("title") or "Unknown"
-        artist = req.artist or info.get("uploader") or info.get("creator") or "Unknown"
+        # Extract metadata with automatic fallbacks from video info
+        title = req.title or info.get("track") or info.get("title") or "Unknown"
+        artist = req.artist or info.get("artist") or info.get("uploader") or info.get("creator") or "Unknown"
         album = req.album or info.get("album") or title
+        album_artist = req.album_artist or info.get("album_artist") or artist
+        genre = req.genre or info.get("genre") or info.get("categories", [None])[0]
+        year = req.year or info.get("release_year") or _extract_year_from_upload_date(info.get("upload_date"))
+        track_number = req.track_number or info.get("track_number")
         thumbnail_url: Optional[str] = info.get("thumbnail")
 
         # ── 2. Locate downloaded MP3 ─────────────────────────────────────────
@@ -122,7 +142,18 @@ def download_and_process(req: DownloadRequest) -> str:
         shutil.copy2(str(source_mp3), str(dest))
 
         # ── 5. Embed ID3 metadata ────────────────────────────────────────────
-        _tag_mp3(dest, title, artist, album, tmp, thumbnail_url)
+        _tag_mp3(
+            dest,
+            title=title,
+            artist=artist,
+            album=album,
+            album_artist=album_artist,
+            genre=genre,
+            year=year,
+            track_number=track_number,
+            tmpdir=tmp,
+            thumbnail_url=thumbnail_url,
+        )
 
         return dest.name
 
@@ -132,10 +163,14 @@ def _tag_mp3(
     title: str,
     artist: str,
     album: str,
+    album_artist: Optional[str],
+    genre: Optional[str],
+    year: Optional[str],
+    track_number: Optional[int],
     tmpdir: Path,
     thumbnail_url: Optional[str],
 ) -> None:
-    """Write ID3 tags (title, artist, album, cover art) to *path*."""
+    """Write ID3 tags (title, artist, album, cover art, genre, year, track number) to *path*."""
     try:
         audio = MP3(str(path), ID3=ID3)
     except Exception:
@@ -148,6 +183,15 @@ def _tag_mp3(
     audio.tags["TIT2"] = TIT2(encoding=3, text=title)
     audio.tags["TPE1"] = TPE1(encoding=3, text=artist)
     audio.tags["TALB"] = TALB(encoding=3, text=album)
+
+    if album_artist:
+        audio.tags["TPE2"] = TPE2(encoding=3, text=album_artist)
+    if genre:
+        audio.tags["TCON"] = TCON(encoding=3, text=genre)
+    if year:
+        audio.tags["TDRC"] = TDRC(encoding=3, text=year)
+    if track_number is not None:
+        audio.tags["TRCK"] = TRCK(encoding=3, text=str(track_number))
 
     # Try embedded thumbnail first, then remote URL
     cover_data = _find_cover(tmpdir, thumbnail_url)
