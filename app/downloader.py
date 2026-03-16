@@ -96,6 +96,8 @@ def download_and_process(req: DownloadRequest) -> str:
             "noplaylist": True,
             "quiet": True,
             "no_warnings": True,
+            "logger": None,  # Disable logging
+            "progress_hooks": [],  # Disable progress hooks
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

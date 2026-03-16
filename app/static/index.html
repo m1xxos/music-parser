@@ -4,796 +4,505 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Music Parser</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* Primary gradient colors */
-      --primary-start:  #7c3aed;
-      --primary-end:    #c026d3;
-      --primary-mid:    #a855f7;
-      
-      /* Semantic colors */
-      --bg:        #0f0a1a;
-      --bg-surface: #1a1229;
-      --surface:   #251a3a;
-      --surface-elevated: #32224a;
-      --border:    #4a365f;
-      --border-soft: #3d2a4f;
-      --text:      #f5f3ff;
-      --text-muted: #a78bba;
-      --text-dim:  #6b5a8a;
-      --success:   #22c55e;
-      --success-bg: #052e1a;
-      --error:     #ef4444;
-      --error-bg:  #2b0a1a;
-      --warning:   #f59e0b;
-      --info:      #3b82f6;
-      
-      /* Effects */
+      --primary: #4285f4;
+      --primary-dark: #3367d6;
+      --secondary: #34a853;
+      --accent: #ea4335;
+      --warning: #fbbc04;
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --border: #dadce0;
+      --text: #202124;
+      --text-secondary: #5f6368;
+      --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      --shadow-lg: 0 3px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.12);
+      --radius: 24px;
       --radius-sm: 8px;
-      --radius:    16px;
-      --radius-lg: 24px;
-      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
-      --shadow:    0 4px 24px rgba(0,0,0,0.4);
-      --shadow-lg: 0 8px 48px rgba(0,0,0,0.5);
-      --glow:      0 0 40px rgba(168, 85, 247, 0.3);
     }
 
     body {
       background: var(--bg);
-      background-image: 
-        radial-gradient(ellipse at top, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
-        radial-gradient(ellipse at bottom right, rgba(192, 38, 211, 0.1) 0%, transparent 50%);
       color: var(--text);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px 20px 24px;
+      padding: 40px 24px 24px;
     }
 
-    /* Animated background particles */
-    .bg-particles {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      overflow: hidden;
-      z-index: -1;
-    }
-    .particle {
-      position: absolute;
-      width: 4px;
-      height: 4px;
-      background: var(--primary-mid);
-      border-radius: 50%;
-      opacity: 0.3;
-      animation: float 15s infinite ease-in-out;
-    }
-    .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
-    .particle:nth-child(2) { left: 20%; animation-delay: 2s; }
-    .particle:nth-child(3) { left: 30%; animation-delay: 4s; }
-    .particle:nth-child(4) { left: 50%; animation-delay: 1s; }
-    .particle:nth-child(5) { left: 70%; animation-delay: 3s; }
-    .particle:nth-child(6) { left: 85%; animation-delay: 5s; }
-    @keyframes float {
-      0%, 100% { transform: translateY(100vh) scale(0); opacity: 0; }
-      10% { opacity: 0.3; }
-      90% { opacity: 0.3; }
-      100% { transform: translateY(-100vh) scale(1); opacity: 0; }
-    }
-
-    /* ── Logo / heading ─────────────────────────────────────────────────── */
+    /* Logo */
     .logo {
       text-align: center;
-      margin-bottom: 48px;
-      animation: fadeInDown 0.8s ease-out;
+      margin-bottom: 32px;
     }
-    
-    .logo-container {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 88px;
-      height: 88px;
-      background: linear-gradient(135deg, var(--surface), var(--bg-surface));
-      border: 2px solid var(--border);
-      border-radius: var(--radius-lg);
-      margin-bottom: 16px;
-      box-shadow: var(--shadow), var(--glow);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .logo-container::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: conic-gradient(from 0deg, transparent, var(--primary-start), transparent, var(--primary-end), transparent);
-      animation: rotate 8s linear infinite;
-      opacity: 0.5;
-    }
-    
-    .logo-inner {
-      position: relative;
-      z-index: 1;
+    .logo-icon {
       width: 72px;
       height: 72px;
-      background: var(--bg);
-      border-radius: calc(var(--radius-lg) - 4px);
+      background: linear-gradient(135deg, var(--primary), #9c27b0);
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    
-    .logo svg { 
-      width: 42px; 
-      height: 42px; 
-    }
-    
-    .logo h1 {
-      font-size: 2.2rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, var(--text) 0%, var(--primary-mid) 50%, var(--primary-end) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 8px;
-    }
-    
-    .logo p { 
-      color: var(--text-muted); 
-      font-size: 0.95rem; 
-      font-weight: 400;
-    }
-
-    @keyframes rotate {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    @keyframes fadeInDown {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ── Card ───────────────────────────────────────────────────────────── */
-    .card {
-      background: linear-gradient(180deg, var(--surface), var(--bg-surface));
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
+      margin: 0 auto 16px;
       box-shadow: var(--shadow-lg);
-      padding: 40px;
+    }
+    .logo-icon svg {
+      width: 36px;
+      height: 36px;
+      fill: white;
+    }
+    .logo h1 {
+      font-family: 'Google Sans', sans-serif;
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    .logo p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    /* Main card */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px;
       width: 100%;
-      max-width: 680px;
-      animation: fadeInUp 0.8s ease-out 0.2s both;
+      max-width: 560px;
+      transition: box-shadow 0.3s;
+    }
+    .card:hover {
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* URL Input */
+    .input-group {
       position: relative;
-      overflow: hidden;
-    }
-    
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--primary-start), var(--primary-end), transparent);
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ── URL field ──────────────────────────────────────────────────────── */
-    .url-row {
-      display: flex;
-      gap: 12px;
       margin-bottom: 16px;
     }
-    
-    .url-input-wrapper {
-      flex: 1;
-      position: relative;
+    .url-input {
+      width: 100%;
+      padding: 16px 20px 16px 48px;
+      background: #f1f3f4;
+      border: 2px solid transparent;
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 16px;
+      outline: none;
+      transition: all 0.2s;
     }
-    
-    .url-input-wrapper::before {
-      content: '';
+    .url-input:focus {
+      background: var(--surface);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.1);
+    }
+    .url-input::placeholder { color: var(--text-secondary); }
+    .url-icon {
       position: absolute;
       left: 16px;
       top: 50%;
       transform: translateY(-50%);
-      width: 20px;
-      height: 20px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b5a8a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1'%3E%3C/path%3E%3C/svg%3E");
-      background-size: contain;
-      background-repeat: no-repeat;
-      opacity: 0.7;
+      color: var(--text-secondary);
     }
-    
-    .url-row input {
-      flex: 1;
-      background: var(--bg-surface);
-      border: 2px solid var(--border-soft);
-      border-radius: var(--radius);
-      padding: 16px 20px 16px 48px;
-      font-size: 1rem;
-      font-family: inherit;
-      color: var(--text);
-      outline: none;
-      transition: all 0.2s ease;
+    .url-icon svg { width: 24px; height: 24px; }
+
+    /* Options toggle */
+    .options-toggle {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
     }
-    
-    .url-row input::placeholder { 
-      color: var(--text-dim); 
+    .options-btn {
+      background: transparent;
+      border: none;
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    
-    .url-row input:focus { 
-      border-color: var(--primary-mid);
-      box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.15);
+    .options-btn:hover { background: rgba(66, 133, 244, 0.1); }
+    .options-btn svg { width: 18px; height: 18px; }
+
+    /* Options panel */
+    .options-panel {
+      display: none;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s;
+    }
+    .options-panel.open {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
     }
 
-    /* ── Buttons ────────────────────────────────────────────────────────── */
-    .btn {
-      border: none;
-      border-radius: var(--radius);
+    /* Waveform */
+    .waveform-box {
+      background: linear-gradient(180deg, #f8f9fa, #f1f3f4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .waveform-canvas {
+      width: 100%;
+      height: 80px;
+      display: block;
       cursor: pointer;
-      font-size: 0.95rem;
-      font-weight: 600;
-      padding: 16px 28px;
-      transition: all 0.2s ease;
-      font-family: inherit;
-      display: inline-flex;
+      border-radius: 4px;
+    }
+    .scrub-preview {
+      position: absolute;
+      top: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      display: none;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .scrub-preview.show {
+      display: block;
+    }
+    .scrub-preview img {
+      width: 160px;
+      height: 90px;
+      object-fit: cover;
+      display: block;
+    }
+    .scrub-time {
+      position: absolute;
+      bottom: -32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .waveform-controls {
+      display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      margin-top: 12px;
+      gap: 12px;
     }
-    
-    .btn:active { transform: scale(0.98); }
-    
-    .btn-primary {
-      background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
-      color: #fff;
-      box-shadow: 0 4px 16px rgba(168, 85, 247, 0.4);
-    }
-    
-    .btn-primary:hover { 
-      box-shadow: 0 6px 24px rgba(168, 85, 247, 0.5);
-      transform: translateY(-1px);
-    }
-    
-    .btn-primary:disabled { 
-      background: var(--border-soft); 
-      color: var(--text-dim);
-      cursor: not-allowed;
-      box-shadow: none;
-      transform: none;
-    }
-    
-    .btn-ghost {
-      background: transparent;
-      color: var(--text-muted);
-      border: 1px solid var(--border-soft);
-      padding: 10px 18px;
-      font-size: 0.85rem;
-    }
-    
-    .btn-ghost:hover { 
-      background: var(--surface-elevated);
-      color: var(--text);
-      border-color: var(--border);
-    }
-    
-    .btn-icon {
-      padding: 10px;
+    .play-btn {
+      background: var(--primary);
+      border: none;
       border-radius: 50%;
-      background: var(--surface-elevated);
-      border: 1px solid var(--border-soft);
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.2s;
-      display: inline-flex;
+      width: 40px;
+      height: 40px;
+      display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
     }
-    
-    .btn-icon:hover {
-      background: var(--primary-start);
-      color: #fff;
-      border-color: var(--primary-start);
+    .play-btn:hover {
+      background: var(--primary-dark);
+      transform: scale(1.05);
     }
-
-    /* ── Advanced section ───────────────────────────────────────────────── */
-    .advanced-toggle {
-      margin-top: 8px;
+    .play-btn:disabled {
+      background: var(--border);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    .play-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: white;
+    }
+    .waveform-times {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+    .time-badge {
+      background: var(--surface);
+      padding: 6px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-weight: 500;
+    }
+    .waveform-hint {
       text-align: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 10px;
     }
 
-    .advanced-panel {
-      display: none;
-      margin-top: 24px;
-      border-top: 1px solid var(--border-soft);
-      padding-top: 24px;
-      animation: slideDown 0.3s ease-out;
-    }
-    
-    .advanced-panel.open { display: block; }
-    
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+    /* Section labels */
+    .section-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 20px 0 12px;
     }
 
-    .fields-grid {
+    /* Time inputs */
+    .time-inputs {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
     }
-    
-    .field { 
-      display: flex; 
-      flex-direction: column; 
-      gap: 6px; 
+    .time-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    
-    .field.full-width {
-      grid-column: span 2;
+    .time-field label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
     }
-    
-    .field label { 
-      font-size: 0.75rem; 
-      font-weight: 600; 
-      color: var(--text-muted); 
-      text-transform: uppercase; 
-      letter-spacing: 0.8px;
-    }
-    
-    .field input {
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-soft);
+    .time-field input {
+      padding: 12px 16px;
+      background: #f1f3f4;
+      border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 12px 14px;
-      font-size: 0.9rem;
-      font-family: inherit;
       color: var(--text);
+      font-size: 14px;
       outline: none;
       transition: all 0.2s;
     }
-    
-    .field input:focus { 
-      border-color: var(--primary-mid);
-      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
-    }
-    
-    .field input::placeholder { 
-      color: var(--text-dim); 
+    .time-field input:focus {
+      background: var(--surface);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
     }
 
-    .section-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--primary-mid);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin: 20px 0 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .section-label::before {
-      content: '';
-      width: 3px;
-      height: 14px;
-      background: linear-gradient(180deg, var(--primary-start), var(--primary-end));
-      border-radius: 2px;
-    }
-
-    /* ── Waveform scrubber ───────────────────────────────────────────────── */
-    .waveform-container {
-      margin-top: 12px;
-      background: linear-gradient(180deg, var(--bg-surface), var(--surface));
-      border: 1.5px solid var(--border-soft);
-      border-radius: var(--radius);
-      padding: 20px;
-      position: relative;
-      transition: all 0.3s ease;
-    }
-    
-    .waveform-container.has-audio {
-      border-color: var(--primary-mid);
-      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
-    }
-    
-    .waveform-canvas {
-      width: 100%;
-      height: 100px;
-      display: block;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-    }
-    
-    .waveform-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 16px;
+    /* Metadata inputs */
+    .metadata-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 16px;
     }
-    
-    .time-display {
-      font-family: 'JetBrains Mono', 'SF Mono', monospace;
-      font-size: 0.9rem;
-      color: var(--text);
-      background: var(--bg-surface);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-sm);
-      padding: 10px 14px;
-      min-width: 80px;
-      text-align: center;
-    }
-    
-    .time-display label {
-      font-size: 0.6rem;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      display: block;
-      margin-bottom: 4px;
-      letter-spacing: 0.5px;
-    }
-    
-    .time-display span {
-      font-weight: 600;
-      font-size: 1rem;
-    }
-    
-    .scrub-btn {
-      background: var(--surface-elevated);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-sm);
-      padding: 10px 16px;
-      font-size: 0.85rem;
-      font-family: inherit;
-      font-weight: 500;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.2s;
+    .meta-field {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 8px;
     }
-    
-    .scrub-btn:hover:not(:disabled) {
-      background: var(--primary-start);
-      color: #fff;
-      border-color: var(--primary-start);
+    .meta-field.full-width {
+      grid-column: span 2;
     }
-    
-    .scrub-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+    .meta-field label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
     }
-    
-    .scrub-btn.active {
-      background: var(--primary-start);
-      color: #fff;
-      border-color: var(--primary-start);
-    }
-    
-    .scrub-info {
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      text-align: center;
-      margin-top: 12px;
-    }
-    
-    .audio-loader {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 24px;
-      color: var(--text-muted);
-    }
-    
-    .audio-loader.show { display: flex; }
-    
-    .loader-dots {
-      display: flex;
-      gap: 4px;
-    }
-    
-    .loader-dots span {
-      width: 8px;
-      height: 8px;
-      background: var(--primary-mid);
-      border-radius: 50%;
-      animation: bounce 1.4s infinite ease-in-out both;
-    }
-    
-    .loader-dots span:nth-child(1) { animation-delay: -0.32s; }
-    .loader-dots span:nth-child(2) { animation-delay: -0.16s; }
-    
-    @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1); }
-    }
-
-    /* ── Status box ─────────────────────────────────────────────────────── */
-    #status {
-      display: none;
-      margin-top: 24px;
-      border-radius: var(--radius);
-      padding: 16px 18px;
-      font-size: 0.9rem;
-      align-items: center;
-      gap: 12px;
-      animation: fadeIn 0.3s ease-out;
-    }
-    
-    #status.show { display: flex; }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    #status.pending, #status.downloading {
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(192, 38, 211, 0.15));
-      color: var(--text);
+    .meta-field input {
+      padding: 12px 16px;
+      background: #f1f3f4;
       border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
     }
-    
-    #status.done { 
-      background: linear-gradient(135deg, var(--success-bg), rgba(34, 197, 94, 0.1));
-      color: var(--success);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-    }
-    
-    #status.error { 
-      background: linear-gradient(135deg, var(--error-bg), rgba(239, 68, 68, 0.1));
-      color: var(--error);
-      border: 1px solid rgba(239, 68, 68, 0.3);
+    .meta-field input:focus {
+      background: var(--surface);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
     }
 
+    /* Download button */
+    .download-btn {
+      width: 100%;
+      padding: 14px 24px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 24px;
+      transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(66, 133, 244, 0.3);
+    }
+    .download-btn:hover {
+      background: var(--primary-dark);
+      box-shadow: 0 2px 6px rgba(66, 133, 244, 0.4);
+    }
+    .download-btn:active { transform: scale(0.98); }
+    .download-btn:disabled {
+      background: var(--border);
+      color: var(--text-secondary);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Status */
+    .status {
+      display: none;
+      margin-top: 20px;
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      text-align: center;
+    }
+    .status.show { display: block; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    .status.pending, .status.downloading {
+      background: #e8f0fe;
+      color: #1967d2;
+    }
+    .status.done {
+      background: #e6f4ea;
+      color: #137333;
+    }
+    .status.error {
+      background: #fce8e6;
+      color: #c5221f;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    footer a:hover { text-decoration: underline; }
+
+    /* Spinner */
     .spinner {
-      width: 20px; 
-      height: 20px;
-      border: 2.5px solid rgba(255,255,255,0.2);
-      border-top-color: currentColor;
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-      flex-shrink: 0;
+      vertical-align: middle;
+      margin-right: 8px;
     }
-    
-    @keyframes spin { 
-      to { transform: rotate(360deg); } 
-    }
-
-    /* ── Footer ─────────────────────────────────────────────────────────── */
-    footer {
-      margin-top: 48px;
-      color: var(--text-dim);
-      font-size: 0.8rem;
-      text-align: center;
-      line-height: 1.6;
-    }
-    
-    footer a { 
-      color: var(--primary-mid); 
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    
-    footer a:hover { 
-      color: var(--primary-end);
-      text-decoration: underline;
-    }
-
-    /* ── Supported sites badges ─────────────────────────────────────────── */
-    .supported-sites {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 16px;
-      flex-wrap: wrap;
-    }
-    
-    .site-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      background: var(--surface);
-      border: 1px solid var(--border-soft);
-      border-radius: 20px;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-    
-    .site-badge svg {
-      width: 14px;
-      height: 14px;
-    }
-
-    /* ── Responsive ─────────────────────────────────────────────────────── */
-    @media (max-width: 600px) {
-      .card { padding: 24px; }
-      .url-row { flex-direction: column; }
-      .fields-grid { grid-template-columns: 1fr; }
-      .field.full-width { grid-column: span 1; }
-      .logo h1 { font-size: 1.8rem; }
-      .waveform-controls { flex-wrap: wrap; justify-content: center; }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-
-  <!-- Background particles -->
-  <div class="bg-particles">
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-  </div>
-
   <div class="logo">
-    <div class="logo-container">
-      <div class="logo-inner">
-        <!-- Music note logo with modern design -->
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style="stop-color:#7c3aed"/>
-              <stop offset="50%" style="stop-color:#a855f7"/>
-              <stop offset="100%" style="stop-color:#c026d3"/>
-            </linearGradient>
-          </defs>
-          <!-- Note head -->
-          <ellipse cx="9" cy="17" rx="5" ry="4" fill="url(#logoGradient)"/>
-          <!-- Note stem -->
-          <path d="M14 17V5a2 2 0 1 0-4 0v8" stroke="url(#logoGradient)" stroke-width="2.5" stroke-linecap="round"/>
-          <!-- Flag -->
-          <path d="M14 7c3 0 5 2 5 5s-2 5-5 5" stroke="url(#logoGradient)" stroke-width="2.5" stroke-linecap="round"/>
-          <!-- Sparkle -->
-          <path d="M18 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z" fill="url(#logoGradient)" opacity="0.6"/>
-        </svg>
-      </div>
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+      </svg>
     </div>
     <h1>Music Parser</h1>
-    <p>Extract audio from YouTube, SoundCloud, Rutube & 1000+ more</p>
+    <p>Download and trim audio from YouTube, SoundCloud, and more</p>
   </div>
 
   <div class="card">
-
-    <div class="url-row">
-      <div class="url-input-wrapper">
-        <input id="url"
-               type="url"
-               placeholder="Paste your audio URL here..."
-               autocomplete="off"
-               autofocus />
-      </div>
-      <button class="btn btn-primary" id="downloadBtn" onclick="startDownload()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
+    <div class="input-group">
+      <span class="url-icon">
+        <svg fill="currentColor" viewBox="0 0 24 24">
+          <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
         </svg>
-        Download
+      </span>
+      <input class="url-input" id="url" type="url" placeholder="Paste YouTube URL here" autocomplete="off" />
+    </div>
+
+    <div class="options-toggle">
+      <button class="options-btn" id="optionsToggleBtn" onclick="toggleOptions()">
+        <svg fill="currentColor" viewBox="0 0 24 24">
+          <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+        </svg>
+        Trim & Options
       </button>
     </div>
 
-    <div class="advanced-toggle">
-      <button class="btn btn-ghost" onclick="toggleAdvanced()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-        Advanced Options
-      </button>
-    </div>
-
-    <div class="advanced-panel" id="advancedPanel">
-      <div class="section-label">Trim with Scrubber</div>
-
-      <div class="waveform-container" id="waveformContainer">
+    <div class="options-panel" id="optionsPanel">
+      <div class="waveform-box">
+        <div class="scrub-preview" id="scrubPreview">
+          <img id="scrubThumbnail" src="" alt="Preview" />
+          <div class="scrub-time" id="scrubTime">0:00</div>
+        </div>
         <canvas id="waveformCanvas" class="waveform-canvas"></canvas>
-        <div class="audio-loader" id="audioLoader">
-          <div class="loader-dots">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <span>Loading audio preview...</span>
-        </div>
         <div class="waveform-controls">
-          <div class="time-display">
-            <label>START</label>
-            <span id="startTimeDisplay">0:00</span>
-          </div>
-          <button class="scrub-btn" id="playBtn" onclick="togglePlay()" disabled>
-            <svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <svg id="pauseIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-            <span id="playBtnText">Play</span>
+          <span class="time-badge" id="startTimeDisplay">0:00</span>
+          <button class="play-btn" id="playBtn" onclick="togglePlay()" disabled title="Play preview">
+            <svg viewBox="0 0 24 24" fill="currentColor" id="playIcon"><path d="M8 5v14l11-7z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor" id="pauseIcon" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
           </button>
-          <div class="time-display">
-            <label>END</label>
-            <span id="endTimeDisplay">0:00</span>
-          </div>
+          <span class="time-badge" id="endTimeDisplay">0:00</span>
         </div>
-        <div class="scrub-info">Drag the handles or click on the waveform to set start/end times</div>
+        <div class="waveform-hint">Drag handles or click to set trim points</div>
       </div>
 
-      <div class="section-label" style="margin-top:20px;">Or Enter Manually</div>
-      <div class="fields-grid">
-        <div class="field">
+      <div class="section-label">Trim Times</div>
+      <div class="time-inputs">
+        <div class="time-field">
           <label>Start Time</label>
           <input id="startTime" type="text" placeholder="1:30" />
         </div>
-        <div class="field">
+        <div class="time-field">
           <label>End Time</label>
-          <input id="endTime" type="text" placeholder="5:00" />
+          <input id="endTime" type="text" placeholder="4:00" />
         </div>
       </div>
 
-      <div class="section-label" style="margin-top:20px;">Metadata</div>
-      <div class="fields-grid">
-        <div class="field">
+      <div class="section-label">Metadata (Optional)</div>
+      <div class="metadata-inputs">
+        <div class="meta-field">
           <label>Title</label>
           <input id="metaTitle" type="text" placeholder="Track title" />
         </div>
-        <div class="field">
+        <div class="meta-field">
           <label>Artist</label>
           <input id="metaArtist" type="text" placeholder="Artist name" />
         </div>
-        <div class="field full-width">
+        <div class="meta-field full-width">
           <label>Album</label>
-          <input id="metaAlbum" type="text" placeholder="Album name (optional)" />
+          <input id="metaAlbum" type="text" placeholder="Album name" />
         </div>
       </div>
     </div>
 
-    <div id="status"></div>
+    <button class="download-btn" id="downloadBtn" onclick="startDownload()">
+      Download
+    </button>
 
+    <div class="status" id="status"></div>
   </div>
 
   <footer>
-    <div>Saves audio directly to your Navidrome library</div>
-    <div class="supported-sites">
-      <span class="site-badge">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-        YouTube
-      </span>
-      <span class="site-badge">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.001.504a11.5 11.5 0 1 0 11.5 11.5 11.5 11.5 0 0 0-11.5-11.5zm5.826 16.778c-.173.365-.595.52-1.052.52-.768 0-1.392-.461-1.392-1.392v-3.356h-2.09v3.356c0 .93-.624 1.392-1.392 1.392-.457 0-.879-.155-1.052-.52-.144-.307-.173-.72-.173-1.202V9.724c0-.509.048-.93.192-1.231.173-.365.595-.52 1.052-.52.466 0 .888.155 1.061.52.144.301.183.722.183 1.231v.768h2.09v-.768c0-.509.048-.93.192-1.231.173-.365.595-.52 1.052-.52.466 0 .888.155 1.061.52.144.301.183.722.183 1.231v6.27c0 .482-.029.895-.173 1.202z"/></svg>
-        SoundCloud
-      </span>
-      <span class="site-badge">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.5 2h19a.5.5 0 0 1 .5.5v19a.5.5 0 0 1-.5.5H2.5a.5.5 0 0 1-.5-.5v-19a.5.5 0 0 1 .5-.5zm9.5 14a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0-2a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
-        Rutube
-      </span>
-      <span class="site-badge">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-        Bandcamp
-      </span>
-      <span class="site-badge">+1000 more</span>
-    </div>
+    Saves to your Navidrome music folder ·
+    <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md" target="_blank">1000+ supported sites</a>
   </footer>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

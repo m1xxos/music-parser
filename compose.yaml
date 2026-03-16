@@ -6,18 +6,16 @@ services:
     image: music-parser:latest
     container_name: music-parser
     restart: unless-stopped
-    read_only: true
-    user: "1000:1000"
     env_file:
       - stack.env
     environment:
       - OUTPUT_DIR=${OUTPUT_DIR:-/music}
     volumes:
-      - music:/music:rw
+      - music:/music
       - type: tmpfs
         target: /tmp
         tmpfs:
-          size: 64M
+          size: 512M
     deploy:
       resources:
         limits:
@@ -26,18 +24,21 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
-    expose:
-      - 8000
     ports:
       - "127.0.0.1:8000:8000"
     networks:
       - music-network
     healthcheck:
-      test: ["CMD", "python", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\""]
       interval: 30s
       timeout: 10s
       start_period: 15s
       retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   music:

@@ -1,37 +1,46 @@
-/* Music Parser – Frontend Logic with Waveform Scrubber */
+/* Music Parser – waveform scrubber */
 
-// ── Waveform state ───────────────────────────────────────────────────────────
-let audioBuffer = null;
-let audioContext = null;
-let audioElement = null;
-let startTime = 0;
-let endTime = 0;
+// State
 let duration = 0;
 let waveformPeaks = [];
 let startHandlePos = 0;
 let endHandlePos = 0;
 let isDragging = null;
+let startTime = 0;
+let endTime = 0;
+let isWaveformInit = false;
+let resizeTimeout = null;
+let currentVideoId = null;
+
+// Audio playback state
+let audioElement = null;
 let isPlaying = false;
-let playStartTime = 0;
-let playStartOffset = 0;
+let previewLoaded = false;
 
-// ── UI Elements ──────────────────────────────────────────────────────────────
-let canvas, ctx, waveformContainer;
-let startTimeDisplay, endTimeDisplay;
-let playBtn, playBtnText, playIcon, pauseIcon;
-let audioLoader;
+// UI elements
+let canvas, ctx;
+let playBtn, playIcon, pauseIcon;
+let scrubPreview, scrubThumbnail, scrubTime;
+let currentVideoId = null;
+let scrubThumbnailUrl = null;
 
-function initWaveformUI() {
+function initWaveform() {
+  if (isWaveformInit) return;
+
   canvas = document.getElementById('waveformCanvas');
+  if (!canvas) return;
+
   ctx = canvas.getContext('2d');
-  waveformContainer = document.getElementById('waveformContainer');
-  startTimeDisplay = document.getElementById('startTimeDisplay');
-  endTimeDisplay = document.getElementById('endTimeDisplay');
+  
+  // Get play button elements
   playBtn = document.getElementById('playBtn');
-  playBtnText = document.getElementById('playBtnText');
   playIcon = document.getElementById('playIcon');
   pauseIcon = document.getElementById('pauseIcon');
-  audioLoader = document.getElementById('audioLoader');
+  
+  // Get scrub preview elements
+  scrubPreview = document.getElementById('scrubPreview');
+  scrubThumbnail = document.getElementById('scrubThumbnail');
+  scrubTime = document.getElementById('scrubTime');
 
   // Set canvas resolution
   const dpr = window.devicePixelRatio || 1;
@@ -40,82 +49,104 @@ function initWaveformUI() {
   canvas.height = rect.height * dpr;
   ctx.scale(dpr, dpr);
 
-  // Event listeners
+  // Events
   canvas.addEventListener('mousedown', onCanvasMouseDown);
   canvas.addEventListener('mousemove', onCanvasMouseMove);
   canvas.addEventListener('mouseup', onCanvasMouseUp);
   canvas.addEventListener('mouseleave', onCanvasMouseUp);
-
-  // Touch support
   canvas.addEventListener('touchstart', onCanvasTouchStart, { passive: false });
   canvas.addEventListener('touchmove', onCanvasTouchMove, { passive: false });
   canvas.addEventListener('touchend', onCanvasMouseUp);
 
-  document.getElementById('startTime').addEventListener('input', onManualTimeChange);
-  document.getElementById('endTime').addEventListener('input', onManualTimeChange);
+  const startInput = document.getElementById('startTime');
+  const endInput = document.getElementById('endTime');
+  if (startInput) startInput.addEventListener('input', onManualTimeChange);
+  if (endInput) endInput.addEventListener('input', onManualTimeChange);
 
-  // Initial draw
+  isWaveformInit = true;
   drawWaveform();
 }
 
-// ── Advanced panel toggle ────────────────────────────────────────────────────
-function toggleAdvanced() {
-  const panel = document.getElementById('advancedPanel');
+function toggleOptions() {
+  const panel = document.getElementById('optionsPanel');
+  const btn = document.getElementById('optionsToggleBtn');
+  
+  if (!panel) return;
+  
   panel.classList.toggle('open');
+  
   if (panel.classList.contains('open')) {
+    btn.innerHTML = `
+      <svg fill="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px;">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg>
+      Hide Options
+    `;
+    // Initialize waveform after panel is visible
     setTimeout(() => {
-      initWaveformUI();
-      // Trigger a resize event to ensure canvas is properly sized
-      window.dispatchEvent(new Event('resize'));
+      initWaveform();
+      // Fetch waveform if URL exists
+      const urlInput = document.getElementById('url');
+      if (urlInput && urlInput.value.trim()) {
+        fetchWaveform(urlInput.value.trim());
+      }
     }, 100);
+  } else {
+    btn.innerHTML = `
+      <svg fill="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px;">
+        <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+      </svg>
+      Trim & Options
+    `;
   }
 }
 
-// ── Waveform data fetching ───────────────────────────────────────────────────
-async function fetchWaveformData(url) {
+async function fetchWaveform(url) {
+  const videoId = extractVideoId(url);
+  if (!videoId) return;
+
   try {
-    audioLoader.classList.add('show');
-    waveformContainer.classList.remove('has-audio');
-    playBtn.disabled = true;
-
-    // Extract video ID from various URL formats
-    const videoId = extractVideoId(url);
-    if (!videoId) {
-      throw new Error('Could not extract video ID from URL');
-    }
-
-    // Fetch waveform with the full URL
     const response = await fetch(`/api/waveform/${videoId}?url=${encodeURIComponent(url)}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch waveform data');
-    }
+    if (!response.ok) return;
 
     const data = await response.json();
-    audioBuffer = data;
     duration = data.duration || 0;
     waveformPeaks = data.peaks || [];
+    currentVideoId = videoId;
 
-    // Initialize handles - start at beginning, end at full duration
-    startHandlePos = 0;
-    endHandlePos = canvas.getBoundingClientRect().width;
-    startTime = 0;
-    endTime = duration;
+    // Auto-populate metadata from video info
+    if (data.title) {
+      const titleInput = document.getElementById('metaTitle');
+      if (titleInput) titleInput.value = data.title;
+    }
+    if (data.artist) {
+      const artistInput = document.getElementById('metaArtist');
+      if (artistInput) artistInput.value = data.artist;
+    }
 
-    updateDisplays();
-    drawWaveform();
+    // Initialize handles
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect();
+      startHandlePos = 0;
+      endHandlePos = rect.width;
+      startTime = 0;
+      endTime = duration;
 
-    waveformContainer.classList.add('has-audio');
-    playBtn.disabled = false;
-    audioLoader.classList.remove('show');
-  } catch (error) {
-    console.error('Waveform fetch error:', error);
-    audioLoader.classList.remove('show');
-    // Still allow manual time entry
+      updateDisplays();
+      drawWaveform();
+      
+      // Enable play button
+      if (playBtn) {
+        playBtn.disabled = false;
+        playBtn.title = "Play 30s preview";
+      }
+    }
+  } catch (e) {
+    console.error('Waveform error:', e);
   }
 }
 
 function extractVideoId(url) {
-  // YouTube patterns
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
     /youtube\.com\/shorts\/([^&\n?#]+)/,
@@ -124,13 +155,11 @@ function extractVideoId(url) {
     const match = url.match(pattern);
     if (match) return match[1];
   }
-  // For other sites, use a hash of the URL
   return 'preview_' + btoa(url).slice(0, 12);
 }
 
-// ── Waveform drawing ─────────────────────────────────────────────────────────
 function drawWaveform() {
-  if (!ctx) return;
+  if (!ctx || !canvas) return;
 
   const rect = canvas.getBoundingClientRect();
   const width = rect.width;
@@ -138,43 +167,40 @@ function drawWaveform() {
 
   ctx.clearRect(0, 0, width, height);
 
-  // Background gradient
-  const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
-  bgGradient.addColorStop(0, '#1a1229');
-  bgGradient.addColorStop(1, '#251a3a');
-  ctx.fillStyle = bgGradient;
+  // Background
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, width, height);
 
-  // Draw waveform peaks
+  // Draw waveform
   if (waveformPeaks.length > 0) {
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, '#a855f7');
-    gradient.addColorStop(0.5, '#c026d3');
-    gradient.addColorStop(1, '#7c3aed');
+    gradient.addColorStop(0, '#4285f4');
+    gradient.addColorStop(1, '#9c27b0');
     ctx.fillStyle = gradient;
-
+    
     const barWidth = width / waveformPeaks.length;
     const centerY = height / 2;
 
-    // Draw bars with rounded tops
     for (let i = 0; i < waveformPeaks.length; i++) {
       const peak = waveformPeaks[i];
-      const barHeight = peak * (height * 0.7);
+      const barHeight = peak * (height * 0.8);
       const x = i * barWidth;
       const y = centerY - barHeight / 2;
       
-      // Draw mirrored bars
-      roundRect(ctx, x, y, barWidth - 1, barHeight, 2);
+      // Rounded bars
+      ctx.beginPath();
+      ctx.roundRect(x, y, barWidth - 2, barHeight, 2);
       ctx.fill();
     }
   } else {
     // Placeholder waveform
-    ctx.fillStyle = '#3d2a4f';
-    const barWidth = 4;
+    ctx.fillStyle = '#e0e0e0';
+    const barWidth = 6;
     const centerY = height / 2;
-    for (let x = 0; x < width; x += barWidth + 2) {
-      const barHeight = Math.random() * height * 0.4 + 15;
-      roundRect(ctx, x, centerY - barHeight / 2, barWidth, barHeight, 2);
+    for (let x = 0; x < width; x += barWidth + 4) {
+      const barHeight = Math.random() * height * 0.5 + 15;
+      ctx.beginPath();
+      ctx.roundRect(x, centerY - barHeight / 2, barWidth, barHeight, 2);
       ctx.fill();
     }
   }
@@ -182,106 +208,50 @@ function drawWaveform() {
   // Draw selection overlay
   if (endHandlePos > startHandlePos) {
     // Left overlay
-    const leftGradient = ctx.createLinearGradient(0, 0, startHandlePos, 0);
-    leftGradient.addColorStop(0, 'rgba(15, 10, 26, 0.8)');
-    leftGradient.addColorStop(1, 'rgba(15, 10, 26, 0.4)');
-    ctx.fillStyle = leftGradient;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
     ctx.fillRect(0, 0, startHandlePos, height);
 
     // Right overlay
-    const rightGradient = ctx.createLinearGradient(endHandlePos, 0, width, 0);
-    rightGradient.addColorStop(0, 'rgba(15, 10, 26, 0.4)');
-    rightGradient.addColorStop(1, 'rgba(15, 10, 26, 0.8)');
-    ctx.fillStyle = rightGradient;
     ctx.fillRect(endHandlePos, 0, width - endHandlePos, height);
 
     // Selection highlight
-    ctx.fillStyle = 'rgba(168, 85, 247, 0.15)';
+    ctx.fillStyle = 'rgba(66, 133, 244, 0.1)';
     ctx.fillRect(startHandlePos, 0, endHandlePos - startHandlePos, height);
   }
 
   // Draw handles
   drawHandle(startHandlePos, true);
   drawHandle(endHandlePos, false);
-
-  // Draw playhead if playing
-  if (isPlaying && audioElement) {
-    const currentTime = audioElement.currentTime;
-    if (currentTime >= startTime && currentTime <= endTime) {
-      const progress = (currentTime - startTime) / (endTime - startTime);
-      const playheadX = startHandlePos + progress * (endHandlePos - startHandlePos);
-      
-      // Playhead line
-      ctx.strokeStyle = '#f5f3ff';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(playheadX, 0);
-      ctx.lineTo(playheadX, height);
-      ctx.stroke();
-      
-      // Playhead dot
-      ctx.fillStyle = '#f5f3ff';
-      ctx.beginPath();
-      ctx.arc(playheadX, 8, 4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-}
-
-function roundRect(ctx, x, y, width, height, radius) {
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
 }
 
 function drawHandle(x, isStart) {
+  if (!canvas) return;
   const height = canvas.getBoundingClientRect().height;
-  
-  // Handle glow
-  const glowGradient = ctx.createRadialGradient(x, height / 2, 0, x, height / 2, 20);
-  glowGradient.addColorStop(0, 'rgba(168, 85, 247, 0.4)');
-  glowGradient.addColorStop(1, 'rgba(168, 85, 247, 0)');
-  ctx.fillStyle = glowGradient;
-  ctx.fillRect(x - 20, 0, 40, height);
-  
-  // Handle bar
-  const barGradient = ctx.createLinearGradient(x - 2, 0, x + 2, 0);
-  barGradient.addColorStop(0, '#a855f7');
-  barGradient.addColorStop(1, '#c026d3');
-  ctx.fillStyle = barGradient;
-  ctx.fillRect(x - 2, 0, 4, height);
+  const centerY = height / 2;
+
+  // Handle shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+  ctx.beginPath();
+  ctx.arc(x + 1, centerY, 10, 0, Math.PI * 2);
+  ctx.fill();
 
   // Handle circle
-  const circleGradient = ctx.createRadialGradient(x, height / 2, 0, x, height / 2, 10);
-  circleGradient.addColorStop(0, '#a855f7');
-  circleGradient.addColorStop(1, '#7c3aed');
-  ctx.fillStyle = circleGradient;
+  ctx.fillStyle = '#fff';
+  ctx.strokeStyle = '#4285f4';
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.arc(x, height / 2, 10, 0, Math.PI * 2);
+  ctx.arc(x, centerY, 10, 0, Math.PI * 2);
   ctx.fill();
-  
-  // Circle border
-  ctx.strokeStyle = '#f5f3ff';
-  ctx.lineWidth = 2;
   ctx.stroke();
 
   // Handle icon
-  ctx.fillStyle = '#f5f3ff';
+  ctx.fillStyle = '#4285f4';
   ctx.font = 'bold 10px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(isStart ? '◀' : '▶', x, height / 2);
+  ctx.fillText(isStart ? '◀' : '▶', x, centerY);
 }
 
-// ── Mouse/Touch interaction ──────────────────────────────────────────────────
 function getCanvasX(e) {
   const rect = canvas.getBoundingClientRect();
   const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -296,16 +266,15 @@ function getHandleAt(x) {
 }
 
 function onCanvasMouseDown(e) {
-  if (!audioBuffer) return;
   e.preventDefault();
-
   const x = getCanvasX(e);
   const handle = getHandleAt(x);
 
   if (handle) {
     isDragging = handle;
+    showScrubPreview(x);
   } else {
-    // Click on waveform - set start or end based on position
+    // Click to set start or end
     const midPoint = (startHandlePos + endHandlePos) / 2;
     if (x < midPoint) {
       startHandlePos = x;
@@ -315,11 +284,12 @@ function onCanvasMouseDown(e) {
     updateTimeFromPositions();
     updateDisplays();
     drawWaveform();
+    showScrubPreview(x);
   }
 }
 
 function onCanvasMouseMove(e) {
-  if (!isDragging || !audioBuffer) return;
+  if (!isDragging) return;
   e.preventDefault();
 
   const x = getCanvasX(e);
@@ -334,10 +304,12 @@ function onCanvasMouseMove(e) {
   updateTimeFromPositions();
   updateDisplays();
   drawWaveform();
+  updateScrubPreview(x);
 }
 
 function onCanvasMouseUp() {
   isDragging = null;
+  hideScrubPreview();
 }
 
 function onCanvasTouchStart(e) {
@@ -350,8 +322,8 @@ function onCanvasTouchMove(e) {
   onCanvasMouseMove(e);
 }
 
-// ── Time conversion ──────────────────────────────────────────────────────────
 function updateTimeFromPositions() {
+  if (!canvas || duration <= 0) return;
   const rect = canvas.getBoundingClientRect();
   const startRatio = startHandlePos / rect.width;
   const endRatio = endHandlePos / rect.width;
@@ -359,41 +331,17 @@ function updateTimeFromPositions() {
   startTime = startRatio * duration;
   endTime = endRatio * duration;
 
-  // Update hidden inputs
-  document.getElementById('startTime').value = formatTime(startTime);
-  document.getElementById('endTime').value = formatTime(endTime);
+  const startInput = document.getElementById('startTime');
+  const endInput = document.getElementById('endTime');
+  if (startInput) startInput.value = formatTime(startTime);
+  if (endInput) endInput.value = formatTime(endTime);
 }
 
-function updatePositionsFromTime() {
-  if (!audioBuffer) return;
-
-  const rect = canvas.getBoundingClientRect();
-  startHandlePos = (startTime / duration) * rect.width;
-  endHandlePos = (endTime / duration) * rect.width;
-
-  document.getElementById('startTime').value = formatTime(startTime);
-  document.getElementById('endTime').value = formatTime(endTime);
-
-  updateDisplays();
-  drawWaveform();
-}
-
-function onManualTimeChange() {
-  const startInput = document.getElementById('startTime').value.trim();
-  const endInput = document.getElementById('endTime').value.trim();
-
-  if (startInput) startTime = parseTimeToSeconds(startInput);
-  if (endInput) endTime = parseTimeToSeconds(endInput);
-
-  if (audioBuffer) {
-    updatePositionsFromTime();
-  }
-}
-
-// ── Display helpers ──────────────────────────────────────────────────────────
 function updateDisplays() {
-  startTimeDisplay.textContent = formatTime(startTime);
-  endTimeDisplay.textContent = formatTime(endTime);
+  const startEl = document.getElementById('startTimeDisplay');
+  const endEl = document.getElementById('endTimeDisplay');
+  if (startEl) startEl.textContent = formatTime(startTime);
+  if (endEl) endEl.textContent = formatTime(endTime);
 }
 
 function formatTime(seconds) {
@@ -407,7 +355,6 @@ function parseTimeToSeconds(value) {
   if (!value) return 0;
   value = value.trim();
 
-  // HH:MM:SS or MM:SS
   const parts = value.split(':').map(Number);
   if (parts.length === 2 && parts.every(n => !isNaN(n))) {
     return parts[0] * 60 + parts[1];
@@ -416,113 +363,41 @@ function parseTimeToSeconds(value) {
     return parts[0] * 3600 + parts[1] * 60 + parts[2];
   }
 
-  // Pure seconds
   const seconds = parseFloat(value);
   return isNaN(seconds) ? 0 : seconds;
 }
 
-// ── Audio playback ───────────────────────────────────────────────────────────
-async function togglePlay() {
-  if (!audioBuffer) return;
+function onManualTimeChange() {
+  if (duration <= 0 || !canvas) return;
+  
+  const startInput = document.getElementById('startTime');
+  const endInput = document.getElementById('endTime');
+  
+  const startInputValue = startInput ? startInput.value.trim() : '';
+  const endInputValue = endInput ? endInput.value.trim() : '';
 
-  if (isPlaying) {
-    stopPlayback();
-  } else {
-    await startPlayback();
-  }
-}
+  if (startInputValue) startTime = parseTimeToSeconds(startInputValue);
+  if (endInputValue) endTime = parseTimeToSeconds(endInputValue);
 
-async function startPlayback() {
-  // Create audio element if not exists
-  if (!audioElement) {
-    audioElement = new Audio();
-    audioElement.addEventListener('ended', () => stopPlayback());
-    audioElement.addEventListener('timeupdate', onAudioTimeUpdate);
-  }
-
-  // Load audio if not loaded
-  if (!audioElement.src || audioElement.src === '') {
-    const videoId = extractVideoId(document.getElementById('url').value.trim());
-    const previewUrl = `/api/audio-preview/${videoId}`;
-    audioElement.src = previewUrl;
-  }
-
-  try {
-    await audioElement.load();
-
-    // Calculate the offset within the selected range
-    const rangeDuration = endTime - startTime;
-    const offset = startTime;
-
-    audioElement.currentTime = offset;
-    playStartOffset = offset;
-
-    await audioElement.play();
-
-    isPlaying = true;
-    playBtnText.textContent = 'Pause';
-    playIcon.style.display = 'none';
-    pauseIcon.style.display = 'inline';
-    playBtn.classList.add('active');
-
-    animatePlayhead();
-  } catch (e) {
-    console.error('Playback error:', e);
-    stopPlayback();
-  }
-}
-
-function stopPlayback() {
-  if (audioElement) {
-    audioElement.pause();
-  }
-  isPlaying = false;
-  playBtnText.textContent = 'Play';
-  playIcon.style.display = 'inline';
-  pauseIcon.style.display = 'none';
-  playBtn.classList.remove('active');
-}
-
-function onAudioTimeUpdate() {
-  if (!audioElement || !isPlaying) return;
-
-  const currentTime = audioElement.currentTime;
-
-  // Check if we've reached the end time
-  if (currentTime >= endTime) {
-    stopPlayback();
-    audioElement.currentTime = endTime;
-  }
-
+  const rect = canvas.getBoundingClientRect();
+  startHandlePos = (startTime / duration) * rect.width;
+  endHandlePos = (endTime / duration) * rect.width;
+  
+  updateDisplays();
   drawWaveform();
 }
 
-function animatePlayhead() {
-  if (!isPlaying) return;
-  drawWaveform();
-  if (isPlaying) {
-    requestAnimationFrame(animatePlayhead);
-  }
-}
-
-// ── Status display ───────────────────────────────────────────────────────────
 function setStatus(state, message) {
   const el = document.getElementById('status');
+  if (!el) return;
+  
   el.className = `show ${state}`;
-
-  const spinner = (state === 'pending' || state === 'downloading')
-    ? '<div class="spinner"></div>'
-    : '';
-
-  const icons = { done: '✓', error: '✕' };
-  const icon = icons[state] ? `<span style="font-size:1.2em;font-weight:bold;">${icons[state]}</span>` : '';
-
-  el.innerHTML = `${spinner}${icon}<span>${message}</span>`;
-}
-
-function hideStatus() {
-  document.getElementById('status').className = '';
-  document.getElementById('status').innerHTML = '';
+  
+  if (state === 'pending' || state === 'downloading') {
+    el.innerHTML = `<span class="spinner"></span>${message}`;
+  } else {
+    el.textContent = message;
+  }
 }
 
 async function pollJob(jobId) {
@@ -537,18 +412,18 @@ async function pollJob(jobId) {
       const resp = await fetch(`/api/jobs/${jobId}`);
       data = await resp.json();
     } catch {
-      setStatus('error', 'Lost connection to server.');
+      setStatus('error', 'Connection lost');
       return;
     }
 
     if (data.status === 'done') {
-      setStatus('done', `✓ ${data.message}`);
+      setStatus('done', '✓ ' + data.message);
       document.getElementById('downloadBtn').disabled = false;
       return;
     }
 
     if (data.status === 'error') {
-      setStatus('error', `✕ ${data.message}`);
+      setStatus('error', data.message);
       document.getElementById('downloadBtn').disabled = false;
       return;
     }
@@ -556,19 +431,19 @@ async function pollJob(jobId) {
     setStatus(data.status, data.message);
   }
 
-  setStatus('error', 'Timed out waiting for job to finish.');
+  setStatus('error', 'Timed out');
   document.getElementById('downloadBtn').disabled = false;
 }
 
 async function startDownload() {
   const url = document.getElementById('url').value.trim();
   if (!url) {
-    setStatus('error', 'Please enter a URL.');
+    setStatus('error', 'Please enter a URL');
     return;
   }
 
-  // Fetch waveform data when URL is entered
-  await fetchWaveformData(url);
+  // Fetch waveform (fast - metadata only)
+  await fetchWaveform(url);
 
   const payload = {
     url,
@@ -579,8 +454,9 @@ async function startDownload() {
     album: document.getElementById('metaAlbum').value.trim() || null,
   };
 
-  document.getElementById('downloadBtn').disabled = true;
-  setStatus('pending', 'Queuing job…');
+  const btn = document.getElementById('downloadBtn');
+  btn.disabled = true;
+  setStatus('pending', 'Queuing...');
 
   let jobId;
   try {
@@ -598,33 +474,158 @@ async function startDownload() {
     const data = await resp.json();
     jobId = data.job_id;
   } catch (e) {
-    setStatus('error', `Failed to start: ${e.message}`);
-    document.getElementById('downloadBtn').disabled = false;
+    setStatus('error', 'Failed: ' + e.message);
+    btn.disabled = false;
     return;
   }
 
-  setStatus('downloading', 'Downloading audio…');
+  setStatus('downloading', 'Downloading audio...');
   pollJob(jobId);
 }
 
-// Allow pressing Enter in the URL field
+// Enter key to download
 document.getElementById('url').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') startDownload();
 });
 
-// Initialize on load
-document.addEventListener('DOMContentLoaded', () => {
-  // Waveform UI will be initialized when advanced panel opens
-});
-
-// Handle window resize for responsive canvas
+// Handle window resize with debounce
 window.addEventListener('resize', () => {
-  if (canvas && ctx) {
+  if (!isWaveformInit || !canvas) return;
+  
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
     drawWaveform();
-  }
+  }, 250);
 });
+
+// Audio playback functions
+async function togglePlay() {
+  if (!currentVideoId || !playBtn) return;
+  
+  if (isPlaying) {
+    stopPreview();
+  } else {
+    await loadAndPlayPreview();
+  }
+}
+
+async function loadAndPlayPreview() {
+  if (!currentVideoId || !playBtn) return;
+  
+  // Show loading state
+  playBtn.disabled = true;
+  playBtn.style.opacity = '0.7';
+  
+  try {
+    // Create audio element if needed
+    if (!audioElement) {
+      audioElement = new Audio();
+      audioElement.addEventListener('ended', () => stopPreview());
+      audioElement.addEventListener('timeupdate', onAudioTimeUpdate);
+    }
+    
+    // Load preview if not already loaded
+    if (!previewLoaded) {
+      const urlInput = document.getElementById('url');
+      const url = urlInput ? urlInput.value.trim() : '';
+      if (!url) throw new Error('No URL');
+      
+      const previewUrl = `/api/audio-preview/${currentVideoId}?url=${encodeURIComponent(url)}`;
+      audioElement.src = previewUrl;
+      await audioElement.load();
+      previewLoaded = true;
+    }
+    
+    // Play
+    await audioElement.play();
+    isPlaying = true;
+    updatePlayButton();
+  } catch (e) {
+    console.error('Preview error:', e);
+    playBtn.disabled = false;
+    playBtn.style.opacity = '';
+  }
+}
+
+function stopPreview() {
+  if (audioElement) {
+    audioElement.pause();
+    audioElement.currentTime = 0;
+  }
+  isPlaying = false;
+  previewLoaded = false;
+  updatePlayButton();
+}
+
+function updatePlayButton() {
+  if (!playBtn || !playIcon || !pauseIcon) return;
+  
+  if (isPlaying) {
+    playIcon.style.display = 'none';
+    pauseIcon.style.display = 'block';
+    playBtn.title = 'Pause';
+  } else {
+    playIcon.style.display = 'block';
+    pauseIcon.style.display = 'none';
+    playBtn.title = 'Play 30s preview';
+    playBtn.disabled = false;
+    playBtn.style.opacity = '';
+  }
+}
+
+function onAudioTimeUpdate() {
+  if (!audioElement || !isPlaying) return;
+  
+  // Stop at end of preview
+  if (audioElement.ended) {
+    stopPreview();
+  }
+  
+  // Redraw waveform with playhead
+  drawWaveform();
+}
+
+// Scrub preview functions
+function showScrubPreview(x) {
+  if (!scrubPreview || !scrubThumbnail || !scrubTime) return;
+  if (!currentVideoId || duration <= 0) return;
+  
+  const rect = canvas.getBoundingClientRect();
+  const time = (x / rect.width) * duration;
+  
+  // Position preview at cursor
+  scrubPreview.style.left = `${x}px`;
+  scrubPreview.classList.add('show');
+  
+  // Update time display
+  scrubTime.textContent = formatTime(time);
+  
+  // Get thumbnail URL from YouTube
+  if (currentVideoId && !scrubThumbnailUrl) {
+    scrubThumbnailUrl = `https://img.youtube.com/vi/${currentVideoId}/mqdefault.jpg`;
+    scrubThumbnail.src = scrubThumbnailUrl;
+  }
+}
+
+function updateScrubPreview(x) {
+  if (!scrubPreview || !scrubTime) return;
+  if (!currentVideoId || duration <= 0) return;
+  
+  const rect = canvas.getBoundingClientRect();
+  const time = (x / rect.width) * duration;
+  
+  // Update position and time
+  scrubPreview.style.left = `${x}px`;
+  scrubTime.textContent = formatTime(time);
+}
+
+function hideScrubPreview() {
+  if (scrubPreview) {
+    scrubPreview.classList.remove('show');
+  }
+}

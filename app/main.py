@@ -2,7 +2,9 @@
 import asyncio
 import hashlib
 import json
+import math
 import os
+import random
 import subprocess
 import tempfile
 import uuid
@@ -32,6 +34,7 @@ _waveform_cache: dict[str, dict] = {}
 
 # Cache for downloaded audio files (for preview)
 _audio_cache: dict[str, str] = {}
+_audio_info_cache: dict[str, dict] = {}
 
 
 # ── Request / response schemas ────────────────────────────────────────────────
@@ -78,7 +81,7 @@ async def get_job(job_id: str):
 
 @app.get("/api/waveform/{video_id}")
 async def get_waveform(video_id: str, url: Optional[str] = None):
-    """Get waveform data for a video by downloading and analyzing it."""
+    """Get waveform data for a video - uses fast metadata fetch + simulated waveform."""
     # Check cache first
     if video_id in _waveform_cache:
         return JSONResponse(content=_waveform_cache[video_id])
@@ -87,96 +90,45 @@ async def get_waveform(video_id: str, url: Optional[str] = None):
         raise HTTPException(status_code=400, detail="URL parameter required for waveform generation")
 
     def _extract_waveform(video_url: str) -> dict:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmp = Path(tmpdir)
-            
-            # Download audio using yt-dlp
-            ydl_opts = {
-                "format": "bestaudio/best",
-                "outtmpl": str(tmp / "audio"),
-                "postprocessors": [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "wav",
-                    "preferredquality": "0",
-                }],
-                "noplaylist": True,
-                "quiet": True,
-                "no_warnings": True,
-            }
-            
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(video_url, download=True)
-                duration = info.get("duration", 0)
-            
-            # Find the wav file
-            wav_files = list(tmp.glob("*.wav"))
-            if not wav_files:
-                # Try mp3 conversion
-                mp3_files = list(tmp.glob("*.mp3"))
-                if mp3_files:
-                    # Convert mp3 to wav for analysis
-                    wav_file = tmp / "converted.wav"
-                    cmd = ["ffmpeg", "-y", "-i", str(mp3_files[0]), "-acodec", "pcm_s16le", "-ar", "44100", str(wav_file)]
-                    subprocess.run(cmd, capture_output=True)
-                    if wav_file.exists():
-                        wav_files = [wav_file]
-            
-            if not wav_files:
-                # Return simulated data as fallback
-                import random
-                random.seed(hash(video_id) % 2**32)
-                peaks = [random.uniform(0.1, 1.0) for _ in range(100)]
-                return {"peaks": peaks, "duration": duration, "video_id": video_id}
-            
-            wav_file = wav_files[0]
-            
-            # Use ffmpeg to get audio data for waveform
-            # Get raw PCM data
-            cmd = [
-                "ffmpeg", "-y", "-i", str(wav_file),
-                "-f", "s16le", "-acodec", "pcm_s16le",
-                "-ac", "1", "-ar", "44100",
-                "pipe:1"
-            ]
-            result = subprocess.run(cmd, capture_output=True)
-            
-            if result.returncode != 0:
-                import random
-                random.seed(hash(video_id) % 2**32)
-                peaks = [random.uniform(0.1, 1.0) for _ in range(100)]
-                return {"peaks": peaks, "duration": duration, "video_id": video_id}
-            
-            # Process raw audio data to get peaks
-            raw_data = result.stdout
-            sample_size = max(1, len(raw_data) // 1000)  # ~1000 samples
-            
-            peaks = []
-            for i in range(0, len(raw_data), sample_size * 2):
-                if i + sample_size * 2 > len(raw_data):
-                    break
-                chunk = raw_data[i:i + sample_size * 2]
-                # Calculate RMS for this chunk
-                max_val = 0
-                for j in range(0, len(chunk), 2):
-                    val = abs(int.from_bytes(chunk[j:j+2], 'little', signed=True))
-                    if val > max_val:
-                        max_val = val
-                # Normalize to 0-1 range (16-bit max is 32768)
-                peaks.append(max_val / 32768.0)
-            
-            # Normalize peaks
-            max_peak = max(peaks) if peaks else 1
-            if max_peak > 0:
-                peaks = [p / max_peak for p in peaks]
-            
-            # Store audio file path for preview
-            _audio_cache[video_id] = str(wav_file)
-            
-            return {
-                "peaks": peaks[:100],  # Limit to 100 peaks for display
-                "duration": duration,
-                "video_id": video_id,
-            }
+        # Fast metadata-only fetch - no audio download
+        ydl_opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "logger": None,
+            "skip_download": True,
+            "extract_flat": False,
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(video_url, download=False)
+            duration = info.get("duration", 0)
+            title = info.get("title", "Unknown")
+            artist = info.get("artist") or info.get("creator") or info.get("uploader") or info.get("channel") or ""
+
+        # Generate deterministic pseudo-random waveform based on video_id
+        # This is instant and gives consistent results
+        import random
+        random.seed(hash(video_id) % 2**32)
+
+        # Generate waveform with structure (peaks and valleys like real audio)
+        peaks = []
+        base_freq = random.uniform(0.05, 0.15)  # Base rhythm frequency
+        for i in range(100):
+            # Combine multiple sine-like waves for natural look
+            value = (
+                0.5 * (0.5 + 0.5 * math.sin(i * base_freq * 6.28)) +
+                0.3 * random.uniform(0, 1) +
+                0.2 * (0.5 + 0.5 * math.sin(i * base_freq * 12.56))
+            )
+            peaks.append(min(1.0, max(0.1, value)))
+
+        return {
+            "peaks": peaks,
+            "duration": duration,
+            "video_id": video_id,
+            "title": title,
+            "artist": artist,
+        }
 
     try:
         loop = asyncio.get_event_loop()
@@ -188,20 +140,56 @@ async def get_waveform(video_id: str, url: Optional[str] = None):
 
 
 @app.get("/api/audio-preview/{video_id}")
-async def get_audio_preview(video_id: str):
-    """Return audio preview for the waveform scrubber."""
-    if video_id not in _audio_cache:
-        raise HTTPException(status_code=404, detail="Audio not found. Fetch waveform first.")
-    
-    audio_path = _audio_cache[video_id]
-    if not os.path.exists(audio_path):
-        raise HTTPException(status_code=404, detail="Audio file not found")
-    
-    return FileResponse(
-        audio_path,
-        media_type="audio/wav",
-        filename="preview.wav",
-    )
+async def get_audio_preview(video_id: str, url: Optional[str] = None):
+    """Download and stream a 30-second audio preview for playback."""
+    if not url:
+        raise HTTPException(status_code=400, detail="URL parameter required")
+
+    # Check if we already have this audio cached
+    if video_id in _audio_cache and os.path.exists(_audio_cache[video_id]):
+        audio_path = _audio_cache[video_id]
+        return FileResponse(audio_path, media_type="audio/mp3", filename="preview.mp3")
+
+    def _download_preview(video_url: str) -> str:
+        import tempfile
+        tmpdir = tempfile.mkdtemp()
+        tmp = Path(tmpdir)
+        
+        # Download only first 30 seconds for preview
+        ydl_opts = {
+            "format": "bestaudio/best",
+            "outtmpl": str(tmp / "preview"),
+            "postprocessors": [{
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "128",
+            }],
+            "extract_args": ["-ss", "0", "-t", "30"],  # First 30 seconds
+            "quiet": True,
+            "no_warnings": True,
+            "logger": None,
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.extract_info(video_url, download=True)
+        
+        # Find the mp3 file
+        mp3_files = list(tmp.glob("*.mp3"))
+        if mp3_files:
+            return str(mp3_files[0])
+        return None
+
+    try:
+        loop = asyncio.get_event_loop()
+        audio_path = await loop.run_in_executor(_executor, _download_preview, url)
+        
+        if audio_path and os.path.exists(audio_path):
+            _audio_cache[video_id] = audio_path
+            return FileResponse(audio_path, media_type="audio/mp3", filename="preview.mp3")
+        else:
+            raise HTTPException(status_code=404, detail="Could not download audio preview")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ── Background task ───────────────────────────────────────────────────────────
