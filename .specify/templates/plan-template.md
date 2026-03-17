@@ -31,7 +31,16 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- Multi-source ingestion impact is defined (YouTube, SoundCloud, RuTube) and
+  includes adapter/change boundaries.
+- Audio editing + metadata enrichment impact is defined (trim/edit + title,
+  artist, album minimum support).
+- Long-running operations (>3s) define async execution and progress reporting
+  (API states + UI progress bar/equivalent).
+- Docker-first runtime impact is documented and includes containerized
+  validation approach.
+- UX plan includes both discoverability path (new users) and efficiency path
+  (power users) while preserving a minimal visual design.
 
 ## Project Structure
 

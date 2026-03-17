@@ -1,0 +1,1 @@
+export function subscribeJobEvents(jobId:string,onEvent:(evt:any)=>void){let es:EventSource|null=null;let retries=0;const connect=()=>{es=new EventSource(`/api/v1/jobs/${jobId}/events`);es.onmessage=(m)=>{retries=0;onEvent(JSON.parse(m.data))};es.onerror=()=>{es?.close();const wait=Math.min(5000,500*2**retries++);setTimeout(connect,wait)}};connect();return()=>es?.close()}
