@@ -100,6 +100,19 @@
 - **[Entity 1]**: [What it represents, key attributes without implementation]
 - **[Entity 2]**: [What it represents, relationships to other entities]
 
+### Constitution Alignment *(mandatory)*
+
+- **CA-001 Multi-Source Coverage**: Specify whether YouTube, SoundCloud, and
+  RuTube behavior is added, unchanged, or intentionally deferred (with reason).
+- **CA-002 Edit/Metadata Pipeline**: Specify trimming/editing impact and
+  metadata fields affected (minimum title/artist/album).
+- **CA-003 Long-Task Transparency**: Identify operations likely to exceed 3
+  seconds and define progress state expectations for API and UI.
+- **CA-004 Docker Runtime**: State Docker/Compose impact and required
+  containerized verification.
+- **CA-005 UX Balance**: Describe how the feature remains intuitive for first
+  use while preserving advanced controls for expert workflows.
+
 ## Success Criteria *(mandatory)*
 
 <!--
