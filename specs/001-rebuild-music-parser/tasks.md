@@ -21,12 +21,12 @@
 
 **Purpose**: Project initialization and baseline structure for rebuild.
 
-- [ ] T001 Create backend and frontend directory skeleton from plan in `app/` and `frontend/src/`
-- [ ] T002 Initialize frontend workspace and build scripts in `frontend/package.json`
-- [ ] T003 [P] Add frontend TypeScript + Vite config in `frontend/tsconfig.json` and `frontend/vite.config.ts`
-- [ ] T004 [P] Add UI base styles and design tokens in `frontend/src/styles.css`
-- [ ] T005 Add backend settings module for runtime config in `app/config.py`
-- [ ] T006 [P] Add shared domain constants for statuses/providers in `app/domain/constants.py`
+- [X] T001 Create backend and frontend directory skeleton from plan in `app/` and `frontend/src/`
+- [X] T002 Initialize frontend workspace and build scripts in `frontend/package.json`
+- [X] T003 [P] Add frontend TypeScript + Vite config in `frontend/tsconfig.json` and `frontend/vite.config.ts`
+- [X] T004 [P] Add UI base styles and design tokens in `frontend/src/styles.css`
+- [X] T005 Add backend settings module for runtime config in `app/config.py`
+- [X] T006 [P] Add shared domain constants for statuses/providers in `app/domain/constants.py`
 
 ---
 
@@ -36,18 +36,18 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T007 Implement SQLite schema/bootstrap for jobs/results in `app/jobs/persistence/sqlite_store.py`
-- [ ] T008 [P] Implement in-memory hot cache for active jobs in `app/jobs/persistence/cache_store.py`
-- [ ] T009 Implement repository layer combining SQLite + cache in `app/jobs/persistence/job_repository.py`
-- [ ] T010 [P] Implement provider adapter interface and registry in `app/adapters/base.py` and `app/adapters/registry.py`
-- [ ] T011 [P] Implement YouTube adapter scaffold in `app/adapters/youtube/adapter.py`
-- [ ] T012 [P] Implement SoundCloud adapter scaffold in `app/adapters/soundcloud/adapter.py`
-- [ ] T013 [P] Implement RuTube adapter scaffold in `app/adapters/rutube/adapter.py`
-- [ ] T014 Implement async job orchestrator and queue flow in `app/jobs/queue/orchestrator.py`
-- [ ] T015 [P] Implement SSE progress publisher for job events in `app/jobs/progress/sse.py`
-- [ ] T016 Implement global API error mapping and responses in `app/api/error_handlers.py`
-- [ ] T017 Implement v1 API router composition in `app/api/routes/__init__.py`
-- [ ] T018 Create single-Dockerfile multi-stage build with frontend bundle copy in `./Dockerfile`
+- [X] T007 Implement SQLite schema/bootstrap for jobs/results in `app/jobs/persistence/sqlite_store.py`
+- [X] T008 [P] Implement in-memory hot cache for active jobs in `app/jobs/persistence/cache_store.py`
+- [X] T009 Implement repository layer combining SQLite + cache in `app/jobs/persistence/job_repository.py`
+- [X] T010 [P] Implement provider adapter interface and registry in `app/adapters/base.py` and `app/adapters/registry.py`
+- [X] T011 [P] Implement YouTube adapter scaffold in `app/adapters/youtube/adapter.py`
+- [X] T012 [P] Implement SoundCloud adapter scaffold in `app/adapters/soundcloud/adapter.py`
+- [X] T013 [P] Implement RuTube adapter scaffold in `app/adapters/rutube/adapter.py`
+- [X] T014 Implement async job orchestrator and queue flow in `app/jobs/queue/orchestrator.py`
+- [X] T015 [P] Implement SSE progress publisher for job events in `app/jobs/progress/sse.py`
+- [X] T016 Implement global API error mapping and responses in `app/api/error_handlers.py`
+- [X] T017 Implement v1 API router composition in `app/api/routes/__init__.py`
+- [X] T018 Create single-Dockerfile multi-stage build with frontend bundle copy in `./Dockerfile`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel.
 
@@ -61,20 +61,20 @@
 
 ### Implementation for User Story 1
 
-- [ ] T019 [US1] Implement media descriptor model and validators in `app/domain/models/media_descriptor.py`
-- [ ] T020 [US1] Implement edit profile model and trim validation in `app/domain/models/edit_profile.py`
-- [ ] T021 [US1] Implement export artifact model and naming policy in `app/domain/models/export_artifact.py`
-- [ ] T022 [US1] Implement metadata enrichment service in `app/media/metadata/service.py`
-- [ ] T023 [US1] Implement audio trim/edit service in `app/media/trim/service.py`
-- [ ] T024 [US1] Implement parse execution service integrating adapters + media pipeline in `app/domain/services/parse_service.py`
-- [ ] T025 [US1] Implement create-job API endpoint from contract in `app/api/routes/jobs_create.py`
-- [ ] T026 [US1] Implement job status API endpoint from contract in `app/api/routes/jobs_status.py`
-- [ ] T027 [US1] Implement file download endpoint and token guard in `app/api/routes/downloads.py`
-- [ ] T028 [US1] Implement guided parse form page in `frontend/src/pages/ParsePage.tsx`
-- [ ] T029 [US1] Implement metadata + trim editor component in `frontend/src/components/EditPanel.tsx`
-- [ ] T030 [US1] Implement parse submission service client in `frontend/src/services/jobs.ts`
-- [ ] T031 [US1] Implement initial results card with download action in `frontend/src/components/ResultCard.tsx`
-- [ ] T032 [US1] Wire US1 route and page composition in `frontend/src/main.tsx`
+- [X] T019 [US1] Implement media descriptor model and validators in `app/domain/models/media_descriptor.py`
+- [X] T020 [US1] Implement edit profile model and trim validation in `app/domain/models/edit_profile.py`
+- [X] T021 [US1] Implement export artifact model and naming policy in `app/domain/models/export_artifact.py`
+- [X] T022 [US1] Implement metadata enrichment service in `app/media/metadata/service.py`
+- [X] T023 [US1] Implement audio trim/edit service in `app/media/trim/service.py`
+- [X] T024 [US1] Implement parse execution service integrating adapters + media pipeline in `app/domain/services/parse_service.py`
+- [X] T025 [US1] Implement create-job API endpoint from contract in `app/api/routes/jobs_create.py`
+- [X] T026 [US1] Implement job status API endpoint from contract in `app/api/routes/jobs_status.py`
+- [X] T027 [US1] Implement file download endpoint and token guard in `app/api/routes/downloads.py`
+- [X] T028 [US1] Implement guided parse form page in `frontend/src/pages/ParsePage.tsx`
+- [X] T029 [US1] Implement metadata + trim editor component in `frontend/src/components/EditPanel.tsx`
+- [X] T030 [US1] Implement parse submission service client in `frontend/src/services/jobs.ts`
+- [X] T031 [US1] Implement initial results card with download action in `frontend/src/components/ResultCard.tsx`
+- [X] T032 [US1] Wire US1 route and page composition in `frontend/src/main.tsx`
 
 **Checkpoint**: User Story 1 is fully functional and testable independently.
 
@@ -88,16 +88,16 @@
 
 ### Implementation for User Story 2
 
-- [ ] T033 [US2] Implement source job model state-transition guards in `app/domain/models/source_job.py`
-- [ ] T034 [US2] Implement result entry summary model in `app/domain/models/result_entry.py`
-- [ ] T035 [US2] Implement SSE job events endpoint from contract in `app/api/routes/jobs_events.py`
-- [ ] T036 [US2] Implement job-result endpoint from contract in `app/api/routes/jobs_result.py`
-- [ ] T037 [US2] Implement recent history endpoint from contract in `app/api/routes/history.py`
-- [ ] T038 [US2] Implement progress timeline UI component with SSE subscription in `frontend/src/components/ProgressTimeline.tsx`
-- [ ] T039 [US2] Implement results summary page for completed/failed jobs in `frontend/src/pages/ResultsPage.tsx`
-- [ ] T040 [US2] Implement history panel component for recent jobs in `frontend/src/components/HistoryPanel.tsx`
-- [ ] T041 [US2] Implement SSE client and reconnection strategy in `frontend/src/services/events.ts`
-- [ ] T042 [US2] Wire job state store for live updates and terminal states in `frontend/src/stores/jobStore.ts`
+- [X] T033 [US2] Implement source job model state-transition guards in `app/domain/models/source_job.py`
+- [X] T034 [US2] Implement result entry summary model in `app/domain/models/result_entry.py`
+- [X] T035 [US2] Implement SSE job events endpoint from contract in `app/api/routes/jobs_events.py`
+- [X] T036 [US2] Implement job-result endpoint from contract in `app/api/routes/jobs_result.py`
+- [X] T037 [US2] Implement recent history endpoint from contract in `app/api/routes/history.py`
+- [X] T038 [US2] Implement progress timeline UI component with SSE subscription in `frontend/src/components/ProgressTimeline.tsx`
+- [X] T039 [US2] Implement results summary page for completed/failed jobs in `frontend/src/pages/ResultsPage.tsx`
+- [X] T040 [US2] Implement history panel component for recent jobs in `frontend/src/components/HistoryPanel.tsx`
+- [X] T041 [US2] Implement SSE client and reconnection strategy in `frontend/src/services/events.ts`
+- [X] T042 [US2] Wire job state store for live updates and terminal states in `frontend/src/stores/jobStore.ts`
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
@@ -111,16 +111,16 @@
 
 ### Implementation for User Story 3
 
-- [ ] T043 [US3] Implement preset profile entity and serialization in `app/domain/models/preset_profile.py`
-- [ ] T044 [US3] Implement preset persistence service in `app/domain/services/preset_service.py`
-- [ ] T045 [US3] Implement presets API routes for create/list/apply in `app/api/routes/presets.py`
-- [ ] T046 [US3] Implement batch request model and validator in `app/domain/models/batch_request.py`
-- [ ] T047 [US3] Implement batch parse orchestration service in `app/domain/services/batch_service.py`
-- [ ] T048 [US3] Implement batch API endpoint for multi-URL submit in `app/api/routes/batch.py`
-- [ ] T049 [US3] Implement advanced controls drawer component in `frontend/src/components/AdvancedDrawer.tsx`
-- [ ] T050 [US3] Implement preset manager UI component in `frontend/src/components/PresetManager.tsx`
-- [ ] T051 [US3] Implement batch submit panel with per-item status in `frontend/src/components/BatchPanel.tsx`
-- [ ] T052 [US3] Implement first-run simplification and expert mode toggle in `frontend/src/stores/uiModeStore.ts`
+- [X] T043 [US3] Implement preset profile entity and serialization in `app/domain/models/preset_profile.py`
+- [X] T044 [US3] Implement preset persistence service in `app/domain/services/preset_service.py`
+- [X] T045 [US3] Implement presets API routes for create/list/apply in `app/api/routes/presets.py`
+- [X] T046 [US3] Implement batch request model and validator in `app/domain/models/batch_request.py`
+- [X] T047 [US3] Implement batch parse orchestration service in `app/domain/services/batch_service.py`
+- [X] T048 [US3] Implement batch API endpoint for multi-URL submit in `app/api/routes/batch.py`
+- [X] T049 [US3] Implement advanced controls drawer component in `frontend/src/components/AdvancedDrawer.tsx`
+- [X] T050 [US3] Implement preset manager UI component in `frontend/src/components/PresetManager.tsx`
+- [X] T051 [US3] Implement batch submit panel with per-item status in `frontend/src/components/BatchPanel.tsx`
+- [X] T052 [US3] Implement first-run simplification and expert mode toggle in `frontend/src/stores/uiModeStore.ts`
 
 **Checkpoint**: All user stories are independently functional.
 
@@ -130,12 +130,12 @@
 
 **Purpose**: Improvements that affect multiple user stories.
 
-- [ ] T053 [P] Update API contract to match implemented endpoints in `specs/001-rebuild-music-parser/contracts/api-contract.yaml`
-- [ ] T054 [P] Add runtime observability logs for job lifecycle and errors in `app/jobs/queue/orchestrator.py` and `app/api/error_handlers.py`
-- [ ] T055 Enforce deterministic output collision handling and sanitize rules in `app/media/metadata/service.py`
-- [ ] T056 Validate single-Dockerfile local workflow and document final run commands in `specs/001-rebuild-music-parser/quickstart.md`
-- [ ] T057 Validate constitution-aligned UX copy for guided and advanced flows in `frontend/src/pages/ParsePage.tsx` and `frontend/src/components/AdvancedDrawer.tsx`
-- [ ] T058 Perform end-to-end quickstart walkthrough and capture fixes in `specs/001-rebuild-music-parser/quickstart.md`
+- [X] T053 [P] Update API contract to match implemented endpoints in `specs/001-rebuild-music-parser/contracts/api-contract.yaml`
+- [X] T054 [P] Add runtime observability logs for job lifecycle and errors in `app/jobs/queue/orchestrator.py` and `app/api/error_handlers.py`
+- [X] T055 Enforce deterministic output collision handling and sanitize rules in `app/media/metadata/service.py`
+- [X] T056 Validate single-Dockerfile local workflow and document final run commands in `specs/001-rebuild-music-parser/quickstart.md`
+- [X] T057 Validate constitution-aligned UX copy for guided and advanced flows in `frontend/src/pages/ParsePage.tsx` and `frontend/src/components/AdvancedDrawer.tsx`
+- [X] T058 Perform end-to-end quickstart walkthrough and capture fixes in `specs/001-rebuild-music-parser/quickstart.md`
 
 ---
 

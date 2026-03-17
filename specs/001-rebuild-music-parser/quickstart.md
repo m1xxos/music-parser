@@ -1,23 +1,9 @@
 # Quickstart: Music Parser Full Rebuild
 
-## Goal
-
-Run the rebuilt application locally using a single Dockerfile workflow.
-
-## Prerequisites
-
-- Docker installed and running
-- A writable local directory for exported music files
-
-## Build Image
+## Build and run (single Dockerfile)
 
 ```bash
 docker build -t music-parser:rebuild /Users/m1xxos/projects/music-parser
-```
-
-## Run Container
-
-```bash
 mkdir -p /Users/m1xxos/projects/music-parser/music
 docker run --rm \
   -p 8000:8000 \
@@ -27,28 +13,25 @@ docker run --rm \
   music-parser:rebuild
 ```
 
-## Access Application
-
-- Open `http://localhost:8000`
-- Paste a YouTube, SoundCloud, or RuTube URL
-- Apply optional trim/metadata edits
-- Start parse job and observe progress bar
-- Download output from results panel
-
-## Health Check
+## Validate API and UI
 
 ```bash
-curl -fsS http://localhost:8000/ >/dev/null && echo "healthy"
+curl -fsS http://localhost:8000/health
+curl -fsS http://localhost:8000/api/v1/history
+open http://localhost:8000
 ```
 
-## Expected Artifacts
+## End-to-end walkthrough
 
-- Exported files in `/Users/m1xxos/projects/music-parser/music`
-- Job status and history visible in UI results view
+1. Open the web app and submit a YouTube/SoundCloud/RuTube URL.
+2. Optionally set trim start/end and metadata overrides.
+3. Watch progress updates in the timeline (SSE-based updates every stage).
+4. Confirm completed artifact appears with download action.
+5. (Expert mode) Create a preset and submit batch URLs.
+6. Verify downloaded artifact exists in `music/` host directory.
 
 ## Troubleshooting
 
-- If no output appears, verify the host volume path exists and is writable.
-- If a source URL fails, confirm it is publicly accessible and supported.
-- If progress appears stalled, refresh the job detail panel and check terminal
-  logs for provider or media-processing errors.
+- If parsing fails immediately, verify source URL is public and supported.
+- If no file appears in host folder, check mount path and container logs.
+- If UI is stale, hard-refresh browser cache after rebuilding image.

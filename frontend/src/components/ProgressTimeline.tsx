@@ -1,0 +1,1 @@
+export function ProgressTimeline(props:{events:any[]}){return <div class='card'><h3>Progress</h3>{props.events.map((e)=><div><small>{e.updatedAt}</small> - {e.statusMessage} ({e.progressPercent}%)</div>)}</div>}

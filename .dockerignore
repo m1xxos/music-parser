@@ -1,0 +1,19 @@
+# Docker build context ignore
+node_modules/
+frontend/node_modules/
+.git/
+.gitignore
+Dockerfile*
+.dockerignore
+*.log*
+.env*
+coverage/
+__pycache__/
+*.pyc
+.pytest_cache/
+dist/
+build/
+music/
+.specify/
+.copilot/
+app/data/
