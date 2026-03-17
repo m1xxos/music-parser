@@ -11,19 +11,9 @@ services:
     environment:
       - OUTPUT_DIR=${OUTPUT_DIR:-/music}
     volumes:
-      - music:/music
+      - ./music:/music
       - type: tmpfs
         target: /tmp
-        tmpfs:
-          size: 512M
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 256M
     ports:
       - "127.0.0.1:8000:8000"
     networks:
@@ -39,10 +29,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-volumes:
-  music:
-    name: music
 
 networks:
   music-network:

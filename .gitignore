@@ -214,3 +214,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+music/
+
+# Node/Frontend + universal
+node_modules/
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+app/data/
+.env*

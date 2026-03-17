@@ -1,0 +1,2 @@
+import { useUiMode } from '../stores/uiModeStore'
+export function AdvancedDrawer(props:any){const {expert,setExpert}=useUiMode();return <div class='card'><h3>Advanced Workspace</h3><p>Power users can enable presets and batch tools without blocking guided first-run flow.</p><label><input type='checkbox' checked={expert} onInput={(e:any)=>setExpert(e.currentTarget.checked)}/> Expert mode</label>{expert?props.children:<small>Enable expert mode to reveal advanced tools.</small>}</div>}
