@@ -1,1 +1,42 @@
-:root{font-family:Inter,system-ui,sans-serif;color:#0f172a;background:#f8fafc}body{margin:0}#app{max-width:980px;margin:0 auto;padding:24px}.card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px}.row{display:flex;gap:8px;flex-wrap:wrap}input,button,select,textarea{padding:8px;border-radius:8px;border:1px solid #cbd5e1}button{background:#2563eb;color:#fff;border:0;cursor:pointer}small{color:#64748b}.progress{height:8px;background:#e2e8f0;border-radius:9999px;overflow:hidden}.progress>div{height:100%;background:#10b981}
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+.app { max-width: 980px; margin: 0 auto; padding: 24px; }
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  margin-bottom: 16px;
+}
+.row, .job-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+input, button, textarea {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+}
+input, textarea { width: 100%; }
+button {
+  background: #2563eb;
+  color: #fff;
+  border: 0;
+  cursor: pointer;
+  min-width: 140px;
+}
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+small { color: #64748b; }
+.progress {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.progress > div { height: 100%; background: #10b981; }
+.job { border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 12px; }
+a { color: #1d4ed8; text-decoration: none; }
+a:hover { text-decoration: underline; }

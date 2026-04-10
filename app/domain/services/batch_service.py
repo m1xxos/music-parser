@@ -6,8 +6,14 @@ class BatchService:
 
     async def submit(self, payload: dict):
         req = BatchRequest(**payload)
+        edit_payload = {
+            'trim_start_seconds': req.trim.startSeconds if req.trim and req.trim.startSeconds is not None else 0,
+            'trim_end_seconds': req.trim.endSeconds if req.trim else None,
+            'artist_override': req.metadata.artist if req.metadata else None,
+            'album_override': req.metadata.album if req.metadata else None,
+        }
         out = []
         for url in req.urls:
-            job = await self.orchestrator.enqueue(str(url), {'trim_start_seconds': 0})
+            job = await self.orchestrator.enqueue(str(url), edit_payload)
             out.append({'url': str(url), 'jobId': job['id'], 'status': job['status']})
         return out

@@ -10,29 +10,9 @@ services:
       - stack.env
     environment:
       - OUTPUT_DIR=${OUTPUT_DIR:-/music}
+      - OMNIVORE_IMPORT_DIR=${OMNIVORE_IMPORT_DIR:-/omnivore/inbox}
     volumes:
-      - ./music:/music
-      - type: tmpfs
-        target: /tmp
+      - ${MUSIC_DIR:-./music}:/music
+      - ${OMNIVORE_IMPORT_HOST_DIR:-./omnivore/inbox}:/omnivore/inbox
     ports:
-      - "127.0.0.1:8000:8000"
-    networks:
-      - music-network
-    healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\""]
-      interval: 30s
-      timeout: 10s
-      start_period: 15s
-      retries: 3
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-networks:
-  music-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
+      - "8000:8000"
