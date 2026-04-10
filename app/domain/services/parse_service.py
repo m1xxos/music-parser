@@ -11,10 +11,13 @@ from app.media.metadata.service import apply_metadata, finalize_output_path
 from app.media.trim.service import trim_audio
 
 class ParseService:
-    def __init__(self, adapter_registry, output_dir: str):
+    def __init__(self, adapter_registry, output_dir: str, omnivore_import_dir: str | None = None):
         self.registry = adapter_registry
         self.output_dir = output_dir
+        self.omnivore_import_dir = omnivore_import_dir
         Path(output_dir).mkdir(parents=True, exist_ok=True)
+        if omnivore_import_dir:
+            Path(omnivore_import_dir).mkdir(parents=True, exist_ok=True)
 
     def execute(self, job_id: str, url: str, edit_payload: dict):
         adapter = self.registry.resolve(url)
@@ -31,6 +34,9 @@ class ParseService:
             out = finalize_output_path(self.output_dir, title)
             shutil.copy2(trimmed, out)
             apply_metadata(str(out), title, artist, album)
+            if self.omnivore_import_dir:
+                omnivore_path = finalize_output_path(self.omnivore_import_dir, out.stem)
+                shutil.copy2(out, omnivore_path)
 
         artifact = ExportArtifact(id=str(uuid.uuid4()), job_id=job_id, filename=out.name, format='mp3', size_bytes=out.stat().st_size, duration_seconds=float(dl_meta.get('duration') or descriptor.duration_seconds), storage_path=str(out), download_token=str(uuid.uuid4()), created_at=datetime.now(timezone.utc))
         return descriptor, artifact

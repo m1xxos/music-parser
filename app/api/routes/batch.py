@@ -4,4 +4,4 @@ router = APIRouter()
 
 @router.post('/batch', status_code=202)
 async def batch(payload: BatchRequest, service=Depends(lambda: router.batch_service)):
-    return {'items': await service.submit({'urls': payload.urls})}
+    return {'items': await service.submit(payload.model_dump())}
