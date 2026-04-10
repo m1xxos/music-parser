@@ -35,7 +35,7 @@ class ParseService:
             shutil.copy2(trimmed, out)
             apply_metadata(str(out), title, artist, album)
             if self.omnivore_import_dir:
-                omnivore_path = finalize_output_path(self.omnivore_import_dir, out.stem)
+                omnivore_path = finalize_output_path(self.omnivore_import_dir, out.name)
                 shutil.copy2(out, omnivore_path)
 
         artifact = ExportArtifact(id=str(uuid.uuid4()), job_id=job_id, filename=out.name, format='mp3', size_bytes=out.stat().st_size, duration_seconds=float(dl_meta.get('duration') or descriptor.duration_seconds), storage_path=str(out), download_token=str(uuid.uuid4()), created_at=datetime.now(timezone.utc))

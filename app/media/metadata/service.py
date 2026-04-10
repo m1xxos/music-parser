@@ -22,6 +22,7 @@ def apply_metadata(path: str, title: str, artist: str, album: str, cover_bytes: 
     audio.save()
 
 def finalize_output_path(output_dir: str, desired_name: str) -> Path:
-    safe = re.sub(r'[^\w\s\-().]', '', desired_name).strip() or 'audio'
+    name = desired_name.removesuffix('.mp3').removesuffix('.MP3')
+    safe = re.sub(r'[^\w\s\-().]', '', name).strip() or 'audio'
     safe = re.sub(r'\s+', ' ', safe)
     return resolve_collision(Path(output_dir), f'{safe}.mp3')

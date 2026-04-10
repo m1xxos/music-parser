@@ -87,11 +87,11 @@ function App() {
         <h1>Music Parser</h1>
         <p>Minimal batch downloader for YouTube, SoundCloud, and RuTube. Files are tagged for Navidrome and copied to Omnivore import folder.</p>
         <label>Links (one per line)</label>
-        <textarea rows={8} value={urlsText} onInput={(e: any) => setUrlsText(e.currentTarget.value)} placeholder="https://youtube.com/...&#10;https://soundcloud.com/..."/>
+        <textarea rows={8} value={urlsText} onInput={(e: any) => setUrlsText(e.currentTarget.value)} placeholder={"https://youtube.com/...\nhttps://soundcloud.com/..."}/>
         <div class="row">
           <input value={artist} onInput={(e: any) => setArtist(e.currentTarget.value)} placeholder="Default artist (optional)"/>
           <input value={album} onInput={(e: any) => setAlbum(e.currentTarget.value)} placeholder="Default album (optional)"/>
-          <button disabled={busy || !links.length} onClick={submit}>{busy ? 'Submitting...' : `Download ${links.length || ''}`.trim()}</button>
+          <button disabled={busy || !links.length} onClick={submit}>{busy ? 'Submitting...' : `Download ${links.length || ''}`}</button>
         </div>
       </section>
       <section class="card">
