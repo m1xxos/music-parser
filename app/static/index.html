@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Navidrome Music Downloader</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Doto:wght@400;500;700&family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body data-theme="dark">
+    <div class="dot-grid" aria-hidden="true"></div>
+    <main class="layout">
+      <header class="hero">
+        <p class="label">NAVIDROME PIPELINE</p>
+        <h1 class="display">MUSIC PARSER</h1>
+        <div class="hero-row">
+          <p class="mono">YOUTUBE / RUTUBE / SOUNDCLOUD / VK VIDEO</p>
+          <button id="themeToggle" class="btn btn-ghost" type="button">[LIGHT MODE]</button>
+        </div>
+      </header>
+
+      <section class="panel" aria-label="download controls">
+        <form id="downloadForm" novalidate>
+          <div class="row row-url">
+            <div class="field grow">
+              <label class="label" for="urlInput">SOURCE URL</label>
+              <input
+                id="urlInput"
+                name="url"
+                type="url"
+                required
+                placeholder="https://www.youtube.com/watch?v=hb0XLX0b4Y4"
+                value="https://www.youtube.com/watch?v=hb0XLX0b4Y4"
+              />
+            </div>
+            <button id="metadataButton" class="btn btn-secondary" type="button">[FETCH METADATA]</button>
+          </div>
+
+          <div class="row row-metadata">
+            <div class="field">
+              <label class="label" for="titleInput">TITLE</label>
+              <input id="titleInput" name="title" type="text" maxlength="200" />
+            </div>
+            <div class="field">
+              <label class="label" for="artistInput">ARTIST</label>
+              <input id="artistInput" name="artist" type="text" maxlength="200" />
+            </div>
+            <div class="field">
+              <label class="label" for="albumInput">ALBUM</label>
+              <input id="albumInput" name="album" type="text" maxlength="200" />
+            </div>
+            <div class="field">
+              <label class="label" for="yearInput">YEAR</label>
+              <input id="yearInput" name="year" type="number" min="1900" max="2200" />
+            </div>
+            <div class="field">
+              <label class="label" for="trackInput">TRACK</label>
+              <input id="trackInput" name="track" type="number" min="1" max="999" />
+            </div>
+            <div class="field">
+              <label class="label" for="genreInput">GENRE</label>
+              <input id="genreInput" name="genre" type="text" maxlength="100" />
+            </div>
+          </div>
+
+          <div class="row row-comment">
+            <div class="field grow">
+              <label class="label" for="commentInput">COMMENT</label>
+              <textarea id="commentInput" name="comment" rows="2" maxlength="10000"></textarea>
+            </div>
+          </div>
+
+          <div class="row row-settings">
+            <div class="field compact">
+              <label class="label" for="formatSelect">FORMAT</label>
+              <select id="formatSelect" name="format">
+                <option value="mp3" selected>MP3</option>
+                <option value="m4a">M4A</option>
+                <option value="flac">FLAC</option>
+              </select>
+            </div>
+            <div class="field compact">
+              <label class="label" for="qualitySelect">QUALITY</label>
+              <select id="qualitySelect" name="quality">
+                <option value="128">128</option>
+                <option value="192">192</option>
+                <option value="256">256</option>
+                <option value="320" selected>320</option>
+              </select>
+            </div>
+            <label class="toggle-wrap" for="scanToggle">
+              <span class="label">AUTO NAVIDROME SCAN</span>
+              <input id="scanToggle" type="checkbox" checked />
+              <span class="toggle-ui" aria-hidden="true"></span>
+            </label>
+            <button id="downloadButton" class="btn btn-primary" type="submit">[START DOWNLOAD]</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel status-panel" aria-label="job status">
+        <p class="label">JOB STATUS</p>
+        <p id="statusText" class="mono status-text">[IDLE]</p>
+        <div id="progressSegments" class="progress-track" aria-hidden="true"></div>
+        <div class="status-meta">
+          <span class="label">PROGRESS</span>
+          <span id="progressValue" class="mono">0%</span>
+        </div>
+      </section>
+
+      <section id="resultPanel" class="panel result-panel" aria-live="polite" aria-label="result">
+        <p class="label">RESULT</p>
+        <p id="resultText" class="mono">[WAITING]</p>
+        <a id="resultLink" class="result-link" href="#" target="_blank" rel="noopener noreferrer" hidden>OPEN FILE</a>
+      </section>
+    </main>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
