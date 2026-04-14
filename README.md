@@ -55,6 +55,20 @@ Environment variables for the downloader service:
 
 If `NAVIDROME_SCAN_URL` is configured, the downloader sends `POST` after each successful job.
 
+## Docker image publishing (GHCR)
+
+On every push, GitHub Actions builds `Dockerfile` and publishes the image to GitHub Container Registry for this repository:
+
+- `ghcr.io/m1xxos/music-parser:latest` for the default branch
+- `ghcr.io/m1xxos/music-parser:<branch-name>` for branch pushes
+- `ghcr.io/m1xxos/music-parser:sha-<commit-sha>` for each commit
+
+Example pull command:
+
+```bash
+docker pull ghcr.io/m1xxos/music-parser:latest
+```
+
 ## API
 
 - `GET /api/health`
