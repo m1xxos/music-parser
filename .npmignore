@@ -1,8 +1,0 @@
-node_modules/
-frontend/node_modules/
-app/data/
-*.log
-.env*
-specs/
-.github/
-.vscode/

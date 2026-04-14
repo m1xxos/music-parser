@@ -1,1 +1,0 @@
-export function ResultCard(props:{result:any}){if(!props.result)return null;return <div class='card'><h3>Result</h3><p><b>{props.result.output.filename}</b> ({Math.round(props.result.output.sizeBytes/1024)} KB)</p><a href={props.result.output.downloadUrl}><button>Download</button></a></div>}
